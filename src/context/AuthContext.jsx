@@ -1,10 +1,10 @@
 
 // src/context/AuthContext.js
-// This context provides authentication state to the entire application.
+// This context provides real-time authentication state to the entire application.
 
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore'; // Import onSnapshot
 import { auth, db } from '../firebase/config';
 
 // Create the context
@@ -21,27 +21,41 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // onAuthStateChanged is a listener that runs whenever the user's login state changes.
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    let userDocListener = null;
+
+    // This listener runs whenever the user logs in or out
+    const authStateListener = onAuthStateChanged(auth, (user) => {
+      // If there was a previous user doc listener, unsubscribe from it
+      if (userDocListener) {
+        userDocListener();
+      }
+
       if (user) {
-        // User is signed in. Fetch their custom data from Firestore.
+        // User is signed in. Set up a REAL-TIME listener for their Firestore document.
         const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          // Combine Firebase auth data with Firestore data (like their role)
-          setCurrentUser({ ...user, ...userDoc.data() });
-        } else {
-          setCurrentUser(user);
-        }
+        userDocListener = onSnapshot(userDocRef, (userDoc) => {
+          if (userDoc.exists()) {
+            // Combine Firebase auth data with Firestore data (like their role and favorites)
+            setCurrentUser({ ...user, ...userDoc.data() });
+          } else {
+            setCurrentUser(user);
+          }
+          setLoading(false);
+        });
       } else {
         // User is signed out.
         setCurrentUser(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    // Cleanup subscription on unmount
-    return unsubscribe;
+    // Cleanup both listeners on unmount
+    return () => {
+      authStateListener();
+      if (userDocListener) {
+        userDocListener();
+      }
+    };
   }, []);
 
   const value = {

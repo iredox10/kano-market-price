@@ -1,19 +1,20 @@
 
 // src/pages/SearchResultsPage.js
-// Displays search results with summary stats, filtering, and sorting.
+// Displays search results with advanced filtering and sorting capabilities.
 
 import React, { useState, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { allProducts, allShopOwners } from '../data/mockData';
 import PriceListTable from '../components/PriceListTable';
 import FilterControls from '../components/FilterControls';
-import SearchSummary from '../components/SearchSummary'; // Import the new component
+import SearchSummary from '../components/SearchSummary';
 import { FiSearch } from 'react-icons/fi';
 
 const SearchResultsPage = () => {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') || 'rice';
 
+  // State for filters and sorting
   const [sortOption, setSortOption] = useState('price_asc');
   const [stockFilter, setStockFilter] = useState(false);
   const [marketFilter, setMarketFilter] = useState([]);

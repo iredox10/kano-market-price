@@ -54,7 +54,7 @@ const SignupPage = () => {
   const closeModalAndRedirect = () => {
     setModalInfo({ isOpen: false });
     if (modalInfo.type === 'success') {
-      navigate('/login');
+      navigate('/my-account');
     }
   };
 
