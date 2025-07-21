@@ -1,0 +1,137 @@
+
+// src/pages/ShopApplicationPage.js
+// A form for users to apply to become a shop owner.
+
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { db } from '../firebase/config';
+import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { FiShoppingBag, FiTag, FiFileText, FiPhone, FiSend } from 'react-icons/fi';
+import { allMarkets } from '../data/mockData';
+import InfoModal from '../components/InfoModal';
+
+const ShopApplicationPage = () => {
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    shopName: '',
+    market: '',
+    specialty: '',
+    phone: '',
+    bio: ''
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [modalInfo, setModalInfo] = useState({ isOpen: false, title: '', message: '', type: 'info' });
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!currentUser) {
+      setModalInfo({ isOpen: true, title: 'Error', message: 'You must be logged in to apply.', type: 'error' });
+      return;
+    }
+    setIsLoading(true);
+
+    try {
+      // Create a new document in the 'shopApplications' collection with the user's UID as the ID
+      await setDoc(doc(db, "shopApplications", currentUser.uid), {
+        ...formData,
+        userId: currentUser.uid,
+        userEmail: currentUser.email,
+        status: 'pending',
+        submittedAt: serverTimestamp(),
+      });
+
+      setModalInfo({
+        isOpen: true,
+        title: 'Application Submitted!',
+        message: 'Thank you. Your application has been received and is now under review.',
+        type: 'success'
+      });
+
+    } catch (error) {
+      console.error("Error submitting application: ", error);
+      setModalInfo({ isOpen: true, title: 'Submission Failed', message: 'There was an error submitting your application. Please try again.', type: 'error' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const closeModalAndRedirect = () => {
+    setModalInfo({ isOpen: false });
+    if (modalInfo.type === 'success') {
+      navigate('/my-account');
+    }
+  };
+
+  return (
+    <>
+      <InfoModal {...modalInfo} onClose={closeModalAndRedirect} />
+      <div className="bg-gray-50 min-h-screen">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-10">
+              <h1 className="text-4xl font-extrabold text-gray-800">Register Your Shop</h1>
+              <p className="mt-3 text-lg text-gray-600">Complete the form below to apply to become a verified seller on KanoPrice.</p>
+            </div>
+            <div className="bg-white p-8 rounded-xl shadow-lg">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label htmlFor="shopName" className="block text-sm font-medium text-gray-700 mb-1">Shop Name</label>
+                  <div className="relative">
+                    <FiShoppingBag className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input type="text" name="shopName" id="shopName" value={formData.shopName} onChange={handleChange} required className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500" />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="market" className="block text-sm font-medium text-gray-700 mb-1">Market</label>
+                  <select name="market" id="market" value={formData.market} onChange={handleChange} required className="w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500">
+                    <option value="">Select a Market</option>
+                    {allMarkets.map(m => <option key={m.slug} value={m.name}>{m.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="specialty" className="block text-sm font-medium text-gray-700 mb-1">Shop Specialty</label>
+                  <div className="relative">
+                    <FiTag className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input type="text" name="specialty" id="specialty" value={formData.specialty} onChange={handleChange} required placeholder="e.g., Grains, Vegetables" className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500" />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Business Phone Number</label>
+                  <div className="relative">
+                    <FiPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input type="tel" name="phone" id="phone" value={formData.phone} onChange={handleChange} required className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500" />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-1">About Your Shop</label>
+                  <div className="relative">
+                    <FiFileText className="absolute left-3 top-3 text-gray-400" />
+                    <textarea name="bio" id="bio" rows="4" value={formData.bio} onChange={handleChange} required className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"></textarea>
+                  </div>
+                </div>
+                <div className="pt-4">
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full flex justify-center items-center bg-green-600 text-white px-6 py-3 rounded-lg font-bold text-lg hover:bg-green-700 transition-colors disabled:bg-green-400"
+                  >
+                    <FiSend className="mr-3" />
+                    {isLoading ? 'Submitting...' : 'Submit Application'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default ShopApplicationPage;
