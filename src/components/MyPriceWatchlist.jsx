@@ -1,12 +1,12 @@
 
 // src/components/MyPriceWatchlist.js
-// A powerful component for users to track their favorite products, now correctly fetching data.
+// A powerful component for users to track their favorite products, now with a total value summary.
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { db } from '../firebase/config';
 import { doc, updateDoc, arrayRemove } from 'firebase/firestore';
-import { FiArrowUp, FiArrowDown, FiMinus, FiEye, FiTrash2, FiInbox } from 'react-icons/fi';
+import { FiArrowUp, FiArrowDown, FiMinus, FiEye, FiTrash2, FiInbox, FiShoppingCart, FiTrendingDown, FiTag } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { allProducts } from '../data/mockData'; // Import allProducts from mockData
 
@@ -17,6 +17,18 @@ const PriceTrendIndicator = ({ current, previous }) => {
   return <FiMinus className="text-gray-400" title="Price stable" />;
 };
 
+const SummaryCard = ({ icon, title, value, colorClass }) => (
+  <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+    <div className="flex items-center">
+      <div className={`mr-4 text-gray-500`}>{icon}</div>
+      <div>
+        <p className="text-sm text-gray-500">{title}</p>
+        <p className={`text-2xl font-bold ${colorClass || 'text-gray-800'}`}>{value}</p>
+      </div>
+    </div>
+  </div>
+);
+
 const MyPriceWatchlist = () => {
   const { currentUser } = useAuth();
   const [favoriteProducts, setFavoriteProducts] = useState([]);
@@ -24,18 +36,26 @@ const MyPriceWatchlist = () => {
 
   useEffect(() => {
     setLoading(true);
-    // Check if the logged-in user has any favorite product IDs
     if (currentUser?.favoriteProductIds && currentUser.favoriteProductIds.length > 0) {
-      // Filter the local allProducts array to find the matching favorite products
       const favs = allProducts.filter(p => currentUser.favoriteProductIds.includes(p.id));
       setFavoriteProducts(favs);
     } else {
-      // If they have no favorites, the list is empty
       setFavoriteProducts([]);
     }
     setLoading(false);
+  }, [currentUser]);
 
-  }, [currentUser]); // This effect re-runs whenever the currentUser object changes (e.g., when a favorite is added/removed)
+  const summaryStats = useMemo(() => {
+    if (favoriteProducts.length === 0) {
+      return { totalValue: 0, priceDrops: 0 };
+    }
+    const totalValue = favoriteProducts.reduce((sum, product) => {
+      return sum + (product.currentPrice?.owner || 0);
+    }, 0);
+    const priceDrops = favoriteProducts.filter(p => p.currentPrice.owner < p.currentPrice.previousOwnerPrice).length;
+
+    return { totalValue, priceDrops };
+  }, [favoriteProducts]);
 
   const handleUnfavorite = async (productId) => {
     if (!currentUser) return;
@@ -55,6 +75,14 @@ const MyPriceWatchlist = () => {
   return (
     <div>
       <h3 className="text-2xl font-bold text-gray-800 mb-4">My Price Watchlist</h3>
+
+      {/* Summary Cards Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <SummaryCard icon={<FiShoppingCart size={24} />} title="Items Tracked" value={favoriteProducts.length} />
+        <SummaryCard icon={<FiTag size={24} />} title="Total Value" value={`₦${summaryStats.totalValue.toLocaleString()}`} />
+        <SummaryCard icon={<FiTrendingDown size={24} />} title="Recent Price Drops" value={summaryStats.priceDrops} colorClass="text-green-600" />
+      </div>
+
       <div className="bg-white shadow-md rounded-lg overflow-x-auto">
         {favoriteProducts.length > 0 ? (
           <table className="min-w-full leading-normal">

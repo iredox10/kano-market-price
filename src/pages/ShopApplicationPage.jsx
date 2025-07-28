@@ -1,13 +1,13 @@
 
 // src/pages/ShopApplicationPage.js
-// A form for users to apply to become a shop owner.
+// An enhanced form for users to apply to become a shop owner with more detailed fields.
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase/config';
 import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { FiShoppingBag, FiTag, FiFileText, FiPhone, FiSend } from 'react-icons/fi';
+import { FiShoppingBag, FiTag, FiFileText, FiPhone, FiSend, FiMessageSquare, FiMapPin, FiClock, FiInstagram, FiFacebook } from 'react-icons/fi';
 import { allMarkets } from '../data/mockData';
 import InfoModal from '../components/InfoModal';
 
@@ -19,7 +19,12 @@ const ShopApplicationPage = () => {
     market: '',
     specialty: '',
     phone: '',
-    bio: ''
+    whatsapp: '',
+    shopAddress: '',
+    openingHours: '',
+    bio: '',
+    facebook: '',
+    instagram: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const [modalInfo, setModalInfo] = useState({ isOpen: false, title: '', message: '', type: 'info' });
@@ -37,7 +42,6 @@ const ShopApplicationPage = () => {
     setIsLoading(true);
 
     try {
-      // Create a new document in the 'shopApplications' collection with the user's UID as the ID
       await setDoc(doc(db, "shopApplications", currentUser.uid), {
         ...formData,
         userId: currentUser.uid,
@@ -80,11 +84,34 @@ const ShopApplicationPage = () => {
             </div>
             <div className="bg-white p-8 rounded-xl shadow-lg">
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label htmlFor="shopName" className="block text-sm font-medium text-gray-700 mb-1">Shop Name</label>
-                  <div className="relative">
-                    <FiShoppingBag className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input type="text" name="shopName" id="shopName" value={formData.shopName} onChange={handleChange} required className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="shopName" className="block text-sm font-medium text-gray-700 mb-1">Shop Name</label>
+                    <div className="relative">
+                      <FiShoppingBag className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input type="text" name="shopName" id="shopName" value={formData.shopName} onChange={handleChange} required className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500" />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="specialty" className="block text-sm font-medium text-gray-700 mb-1">Shop Specialty</label>
+                    <div className="relative">
+                      <FiTag className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input type="text" name="specialty" id="specialty" value={formData.specialty} onChange={handleChange} required placeholder="e.g., Grains, Vegetables" className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500" />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Primary Phone Number</label>
+                    <div className="relative">
+                      <FiPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input type="tel" name="phone" id="phone" value={formData.phone} onChange={handleChange} required className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500" />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700 mb-1">WhatsApp Number</label>
+                    <div className="relative">
+                      <FiMessageSquare className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input type="tel" name="whatsapp" id="whatsapp" value={formData.whatsapp} onChange={handleChange} required className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500" />
+                    </div>
                   </div>
                 </div>
                 <div>
@@ -95,17 +122,17 @@ const ShopApplicationPage = () => {
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="specialty" className="block text-sm font-medium text-gray-700 mb-1">Shop Specialty</label>
+                  <label htmlFor="shopAddress" className="block text-sm font-medium text-gray-700 mb-1">Shop Address / Location Details</label>
                   <div className="relative">
-                    <FiTag className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input type="text" name="specialty" id="specialty" value={formData.specialty} onChange={handleChange} required placeholder="e.g., Grains, Vegetables" className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500" />
+                    <FiMapPin className="absolute left-3 top-3 text-gray-400" />
+                    <textarea name="shopAddress" id="shopAddress" rows="2" value={formData.shopAddress} onChange={handleChange} required placeholder="e.g., Stall C-15, First Floor, Grains Section" className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"></textarea>
                   </div>
                 </div>
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Business Phone Number</label>
+                  <label htmlFor="openingHours" className="block text-sm font-medium text-gray-700 mb-1">Opening Hours</label>
                   <div className="relative">
-                    <FiPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input type="tel" name="phone" id="phone" value={formData.phone} onChange={handleChange} required className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500" />
+                    <FiClock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input type="text" name="openingHours" id="openingHours" value={formData.openingHours} onChange={handleChange} placeholder="e.g., Mon - Sat: 8:00 AM - 6:00 PM" className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500" />
                   </div>
                 </div>
                 <div>

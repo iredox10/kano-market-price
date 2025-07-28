@@ -3,9 +3,9 @@
 // A dedicated page for admins to approve or reject new shop owner applications from Firestore.
 
 import React, { useState, useEffect } from 'react';
-import { db } from '../../firebase/config';
+import { db, functions } from '../../firebase/config'; // Import functions from your config
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { httpsCallable } from 'firebase/functions';
 import { FiCheck, FiX, FiClock, FiMail, FiPhone } from 'react-icons/fi';
 import InfoModal from '../../components/InfoModal';
 
@@ -30,7 +30,7 @@ const VerificationQueuePage = () => {
 
   const handleApprove = async (applicationId, userId) => {
     setIsProcessing(applicationId);
-    const functions = getFunctions();
+    // This is the correct way to call an 'onCall' Cloud Function
     const approveShop = httpsCallable(functions, 'approveShopApplication');
 
     try {
