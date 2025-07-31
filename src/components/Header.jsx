@@ -1,12 +1,7 @@
-
-// src/components/Header.js
-// A redesigned header that now uses the AuthContext to reflect real login state.
-
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // Corrected import path
-import { auth } from '../firebase/config'; // Corrected import path
-import { signOut } from 'firebase/auth';
+import { useAuth } from '../context/AuthContext'; // Import the useAuth hook for Appwrite
+import { account } from '../appwrite/config'; // Import Appwrite account service for signout
 import { FiUser, FiMenu, FiX, FiGrid, FiLogOut, FiHeart, FiSearch, FiChevronDown } from 'react-icons/fi';
 
 const SearchBar = () => {
@@ -35,15 +30,16 @@ const SearchBar = () => {
 };
 
 const UserMenu = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, setCurrentUser } = useAuth(); // Get user data and setter from context
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
-      navigate('/');
+      await account.deleteSession('current');
+      setCurrentUser(null); // Clear the user state in the context
+      navigate('/'); // Redirect to home page after logout
       console.log("User logged out.");
     } catch (error) {
       console.error("Failed to log out:", error);
@@ -104,12 +100,13 @@ const UserMenu = () => {
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { currentUser } = useAuth();
+  const { currentUser, setCurrentUser } = useAuth(); // Use the Appwrite auth context
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await account.deleteSession('current');
+      setCurrentUser(null);
       setIsMenuOpen(false);
       navigate('/');
     } catch (error) {

@@ -25,6 +25,7 @@ import ShopDetailsPage from './pages/ShopDetailsPage';
 import MarketDetailsPage from './pages/MarketDetailsPage';
 import MyAccountPage from './pages/MyAccountPage';
 import ShopApplicationPage from './pages/ShopApplicationPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 // Dashboard Page Components
 import DashboardOverviewPage from './pages/shopOwner/DashboardOverviewPage';
@@ -58,12 +59,12 @@ export default function App() {
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/product/:id" element={<ProductDetailsPage />} />
             <Route path="/shops" element={<ShopsPage />} />
-            <Route path="/shop/:id" element={<ShopDetailsPage />} />
             <Route path="/markets" element={<MarketsPage />} />
             <Route path="/market/:marketName" element={<MarketDetailsPage />} />
             <Route path="/search" element={<SearchResultsPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/about" element={<About />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/contact" element={<Contact />} />

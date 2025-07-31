@@ -1,37 +1,44 @@
 
 // src/pages/SignupPage.js
-// Provides a form for new users to register using Firebase, now with a modal for feedback.
+// Provides a form for new users to register using Appwrite.
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiUser, FiMail, FiLock } from 'react-icons/fi';
-import { auth, db } from '../firebase/config';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { setDoc, doc } from 'firebase/firestore';
-import InfoModal from '../components/InfoModal'; // Import the new modal
+import { account, databases } from '../appwrite/config'; // Import Appwrite services
+import { ID } from 'appwrite';
+import { DATABASE_ID, USERS_COLLECTION_ID } from '../appwrite/constants'; // Import your Appwrite constants
+import InfoModal from '../components/InfoModal';
 
 const SignupPage = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [modalInfo, setModalInfo] = useState({ isOpen: false, title: '', message: '', type: 'info' });
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    setModalInfo({ isOpen: false }); // Clear previous modals
+    setModalInfo({ isOpen: false });
+    setIsLoading(true);
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      // Step 1: Create the user in Appwrite Auth
+      const user = await account.create(ID.unique(), email, password, name);
 
-      await setDoc(doc(db, "users", user.uid), {
-        uid: user.uid,
-        name: name,
-        email: email,
-        role: 'user',
-        createdAt: new Date(),
-      });
+      // Step 2: Create a corresponding document in the 'users' collection
+      await databases.createDocument(
+        DATABASE_ID,
+        USERS_COLLECTION_ID,
+        user.$id, // Use the user's Appwrite ID as the document ID
+        {
+          name: name,
+          email: email,
+          role: 'user', // Assign a default role
+          favoriteProductIds: [], // Initialize with an empty array
+        }
+      );
 
       setModalInfo({
         isOpen: true,
@@ -45,16 +52,18 @@ const SignupPage = () => {
       setModalInfo({
         isOpen: true,
         title: 'Signup Failed',
-        message: err.message.replace('Firebase: ', ''), // Make error more user-friendly
+        message: err.message,
         type: 'error'
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const closeModalAndRedirect = () => {
     setModalInfo({ isOpen: false });
     if (modalInfo.type === 'success') {
-      navigate('/my-account');
+      navigate('/login');
     }
   };
 
@@ -69,7 +78,6 @@ const SignupPage = () => {
             </h2>
           </div>
           <form className="mt-8 space-y-6" onSubmit={handleSignup}>
-            {/* Form inputs remain the same */}
             <div className="rounded-md shadow-sm space-y-4">
               <div>
                 <label htmlFor="name" className="sr-only">Full name</label>
@@ -100,7 +108,7 @@ const SignupPage = () => {
                   <input
                     id="password" name="password" type="password" autoComplete="new-password" required
                     className="appearance-none rounded-md relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                    placeholder="Password (at least 6 characters)" value={password} onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Password (at least 8 characters)" value={password} onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
               </div>
@@ -108,9 +116,10 @@ const SignupPage = () => {
             <div>
               <button
                 type="submit"
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                disabled={isLoading}
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-green-400"
               >
-                Create Account
+                {isLoading ? 'Creating Account...' : 'Create Account'}
               </button>
             </div>
           </form>

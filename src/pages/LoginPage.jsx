@@ -1,15 +1,14 @@
 
 // src/pages/LoginPage.js
-// Provides a form for users to log in, with role-based redirection and password reset.
+// Provides a form for users to log in using Appwrite, with role-based redirection.
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiMail, FiLock, FiAlertCircle } from 'react-icons/fi';
-import { auth, db } from '../firebase/config';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { account, databases } from '../appwrite/config'; // Import Appwrite services
+import { DATABASE_ID, USERS_COLLECTION_ID } from '../appwrite/constants'; // Import your Appwrite constants
 import InfoModal from '../components/InfoModal';
-import ForgotPasswordModal from '../components/ForgotPasswordModal'; // Import the new modal
+import ForgotPasswordModal from '../components/ForgotPasswordModal';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -26,29 +25,34 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      // Step 1: Create a session (log the user in) with Appwrite
+      await account.createEmailPasswordSession(email, password);
 
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
+      // Step 2: Get the logged-in user's account details
+      const user = await account.get();
 
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        switch (userData.role) {
-          case 'admin':
-            navigate('/admin');
-            break;
-          case 'shopOwner':
-            navigate('/dashboard');
-            break;
-          default:
-            navigate('/my-account');
-            break;
-        }
-      } else {
-        navigate('/');
+      // Step 3: Fetch the user's data from the 'users' collection to get their role
+      const userDoc = await databases.getDocument(
+        DATABASE_ID,
+        USERS_COLLECTION_ID,
+        user.$id
+      );
+      console.log(userDoc)
+      // Step 4: Redirect based on the user's role
+      switch (userDoc.role) {
+        case 'admin':
+          navigate('/admin');
+          break;
+        case 'shopOwner':
+          navigate('/dashboard');
+          break;
+        default:
+          navigate('/my-account');
+          console.log('user', userDoc.role)
+          break;
       }
     } catch (err) {
+      console.error("Error logging in:", err);
       setError('Invalid email or password. Please try again.');
     } finally {
       setIsLoading(false);

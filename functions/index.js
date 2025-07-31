@@ -1,75 +1,89 @@
 
+const sdk = require('node-appwrite');
 
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
-const cors = require("cors")({ origin: true }); // Use the cors middleware
+module.exports = async (req, res) => {
+  const client = new sdk.Client();
+  const databases = new sdk.Databases(client);
+  const teams = new sdk.Teams(client);
 
-admin.initializeApp();
-
-// This is an onRequest function, which gives us manual control over CORS.
-exports.approveShopApplication = functions.https.onRequest((req, res) => {
-  // 1. Wrap the entire function in the cors handler.
-  cors(req, res, async () => {
-    // Manually handle the OPTIONS preflight request from the browser
-    if (req.method === 'OPTIONS') {
-      res.status(204).send('');
-      return;
+  try {
+    if (
+      !req.variables['APPWRITE_FUNCTION_ENDPOINT'] ||
+      !req.variables['APPWRITE_FUNCTION_PROJECT_ID'] ||
+      !req.variables['APPWRITE_FUNCTION_API_KEY']
+    ) {
+      throw new Error("Function environment variables are not set correctly.");
     }
 
-    // --- Authentication Check ---
-    // We have to manually verify the user's token with onRequest.
-    const idToken = req.headers.authorization?.split('Bearer ')[1];
-    if (!idToken) {
-      res.status(401).send({ error: 'Unauthorized' });
-      return;
-    }
+    client
+      .setEndpoint(req.variables['APPWRITE_FUNCTION_ENDPOINT'])
+      .setProject(req.variables['APPWRITE_FUNCTION_PROJECT_ID'])
+      .setKey(req.variables['APPWRITE_FUNCTION_API_KEY']);
 
-    try {
-      const decodedToken = await admin.auth().verifyIdToken(idToken);
-      if (decodedToken.role !== 'admin') {
-        res.status(403).send({ error: 'Permission denied.' });
-        return;
+    console.log("Function initialized successfully.");
+
+    const payload = JSON.parse(req.payload);
+    const { applicationId, userId } = payload;
+
+    console.log(`Processing application: ${applicationId} for user: ${userId}`);
+
+    // 1. Get the application data
+    console.log("Step 1: Fetching application document...");
+    const appData = await databases.getDocument(
+      req.variables['DATABASE_ID'],
+      req.variables['SHOP_APPLICATIONS_COLLECTION_ID'],
+      applicationId
+    );
+    console.log("...Application data fetched successfully.");
+
+    // 2. Add the user to the 'shopOwners' team
+    console.log("Step 2: Adding user to shopOwners team...");
+    await teams.createMembership(
+      req.variables['SHOP_OWNERS_TEAM_ID'],
+      [],
+      undefined,
+      appData.userEmail,
+      userId,
+      undefined,
+      appData.shopName
+    );
+    console.log("...User added to team successfully.");
+
+    // 3. Create a new document in the 'shopOwners' collection
+    console.log("Step 3: Creating shopOwner document...");
+    await databases.createDocument(
+      req.variables['DATABASE_ID'],
+      req.variables['SHOP_OWNERS_COLLECTION_ID'],
+      userId,
+      {
+        name: appData.shopName,
+        specialty: appData.speciality,
+        bio: appData.bio,
+        phone: appData.phone,
+        whatsapp: appData.whatsapp,
+        openingHours: appData.openingHours,
+        market: appData.market,
+        userId: userId,
+        status: 'Verified',
       }
+    );
+    console.log("...shopOwner document created successfully.");
 
-      // --- Main Function Logic ---
-      const { applicationId, userId } = req.body.data; // Data is in req.body.data
-      if (!applicationId || !userId) {
-        res.status(400).send({ error: 'Missing applicationId or userId.' });
-        return;
-      }
+    // 4. Update the application status to 'approved'
+    console.log("Step 4: Updating application status...");
+    await databases.updateDocument(
+      req.variables['DATABASE_ID'],
+      req.variables['SHOP_APPLICATIONS_COLLECTION_ID'],
+      applicationId,
+      { status: 'approved' }
+    );
+    console.log("...Application status updated successfully.");
 
-      const db = admin.firestore();
-      const auth = admin.auth();
+    res.json({ success: true, message: `Shop ${appData.shopName} has been approved.` });
 
-      // Set user role
-      await auth.setCustomUserClaims(userId, { role: 'shopOwner' });
-
-      // Get application data
-      const applicationRef = db.collection('shopApplications').doc(applicationId);
-      const applicationDoc = await applicationRef.get();
-      if (!applicationDoc.exists) {
-        res.status(404).send({ error: 'Application not found.' });
-        return;
-      }
-      const appData = applicationDoc.data();
-
-      // Create new shop owner document
-      const shopData = {
-        name: appData.shopName, market: appData.market, specialty: appData.specialty,
-        phone: appData.phone, bio: appData.bio, imageUrl: appData.imageUrl || '',
-        userId: userId, status: 'Verified', createdAt: new Date(),
-      };
-      await db.collection('allShopOwners').doc(userId).set(shopData);
-
-      // Update application status
-      await applicationRef.update({ status: 'approved' });
-
-      // Send success response
-      res.status(200).json({ data: { success: true, message: `Shop ${appData.shopName} has been approved.` } });
-
-    } catch (error) {
-      console.error("Error approving application:", error);
-      res.status(500).send({ error: 'An unknown error occurred.' });
-    }
-  });
-});
+  } catch (error) {
+    console.error("!!! FUNCTION FAILED !!!");
+    console.error(error);
+    res.json({ error: `Function failed: ${error.message}` }, 500);
+  }
+};

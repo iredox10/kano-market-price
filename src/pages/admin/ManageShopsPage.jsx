@@ -1,11 +1,12 @@
 
 // src/pages/admin/ManageShopsPage.js
-// Page for admins to manage all verified shop owners on the platform, powered by Firestore.
+// Page for admins to manage all verified shop owners on the platform, powered by Appwrite.
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { db } from '../../firebase/config';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { FiCheck, FiX, FiTrash2, FiSearch, FiPlus, FiUpload, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { databases } from '../../appwrite/config';
+import { DATABASE_ID, SHOP_OWNERS_COLLECTION_ID } from '../../appwrite/constants';
+import { Query } from 'appwrite';
+import { FiX, FiTrash2, FiSearch, FiPlus, FiUpload, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import AddShopOwnerModal from '../../components/admin/AddShopOwnerModal';
 
 const ITEMS_PER_PAGE = 7;
@@ -18,19 +19,20 @@ const ManageShopsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    // Query to get all documents from 'allShopOwners' where status is 'Verified'
-    const q = query(collection(db, "allShopOwners"), where("status", "==", "Verified"));
-
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const verifiedShops = [];
-      querySnapshot.forEach((doc) => {
-        verifiedShops.push({ id: doc.id, ...doc.data() });
-      });
-      setShops(verifiedShops);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    const fetchShops = async () => {
+      try {
+        const response = await databases.listDocuments(
+          DATABASE_ID,
+          SHOP_OWNERS_COLLECTION_ID
+        );
+        setShops(response.documents);
+      } catch (error) {
+        console.error("Failed to fetch shops:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchShops();
   }, []);
 
   const filteredShops = useMemo(() => {
@@ -61,15 +63,13 @@ const ManageShopsPage = () => {
               onClick={() => setIsModalOpen(true)}
               className="inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
             >
-              <FiPlus className="mr-2" />
-              Add Manually
+              <FiPlus className="mr-2" /> Add Manually
             </button>
             <button
               onClick={handleUploadClick}
               className="inline-flex items-center bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors"
             >
-              <FiUpload className="mr-2" />
-              Upload Excel
+              <FiUpload className="mr-2" /> Upload Excel
             </button>
           </div>
         </div>
@@ -106,10 +106,10 @@ const ManageShopsPage = () => {
               </thead>
               <tbody>
                 {currentShops.map(shop => (
-                  <tr key={shop.id} className="border-b border-gray-200 hover:bg-gray-50">
+                  <tr key={shop.$id} className="border-b border-gray-200 hover:bg-gray-50">
                     <td className="px-5 py-4">
                       <div className="flex items-center">
-                        <img src={shop.logo || 'https://placehold.co/100x100/ccc/fff?text=Shop'} alt={shop.name} className="w-12 h-12 rounded-full mr-4 flex-shrink-0" />
+                        <img src={shop.logoFileId || 'https://placehold.co/100x100/ccc/fff?text=Shop'} alt={shop.name} className="w-12 h-12 rounded-full mr-4 flex-shrink-0" />
                         <p className="text-gray-900 font-semibold whitespace-no-wrap">{shop.name}</p>
                       </div>
                     </td>

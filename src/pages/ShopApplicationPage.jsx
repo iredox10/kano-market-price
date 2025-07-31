@@ -1,14 +1,15 @@
 
 // src/pages/ShopApplicationPage.js
-// An enhanced form for users to apply to become a shop owner with more detailed fields.
+// A form for users to apply to become a shop owner, now integrated with Appwrite.
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { db } from '../firebase/config';
-import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { FiShoppingBag, FiTag, FiFileText, FiPhone, FiSend, FiMessageSquare, FiMapPin, FiClock, FiInstagram, FiFacebook } from 'react-icons/fi';
-import { allMarkets } from '../data/mockData';
+import { databases } from '../appwrite/config';
+import { DATABASE_ID, SHOP_APPLICATIONS_COLLECTION_ID } from '../appwrite/constants';
+import { ID } from 'appwrite';
+import { FiShoppingBag, FiTag, FiFileText, FiPhone, FiSend, FiMessageSquare, FiMapPin, FiClock } from 'react-icons/fi';
+import { allMarkets } from '../data/mockData'; // We'll still use this for the dropdown
 import InfoModal from '../components/InfoModal';
 
 const ShopApplicationPage = () => {
@@ -17,14 +18,12 @@ const ShopApplicationPage = () => {
   const [formData, setFormData] = useState({
     shopName: '',
     market: '',
-    specialty: '',
+    speciality: '', // Corrected spelling to match Appwrite attribute
     phone: '',
     whatsapp: '',
     shopAddress: '',
     openingHours: '',
-    bio: '',
-    facebook: '',
-    instagram: ''
+    bio: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const [modalInfo, setModalInfo] = useState({ isOpen: false, title: '', message: '', type: 'info' });
@@ -42,13 +41,18 @@ const ShopApplicationPage = () => {
     setIsLoading(true);
 
     try {
-      await setDoc(doc(db, "shopApplications", currentUser.uid), {
-        ...formData,
-        userId: currentUser.uid,
-        userEmail: currentUser.email,
-        status: 'pending',
-        submittedAt: serverTimestamp(),
-      });
+      // Create a new document in the 'shopApplications' collection
+      await databases.createDocument(
+        DATABASE_ID,
+        SHOP_APPLICATIONS_COLLECTION_ID,
+        ID.unique(),
+        {
+          ...formData,
+          userId: currentUser.$id,
+          userEmail: currentUser.email,
+          status: 'pending',
+        }
+      );
 
       setModalInfo({
         isOpen: true,
@@ -93,10 +97,11 @@ const ShopApplicationPage = () => {
                     </div>
                   </div>
                   <div>
-                    <label htmlFor="specialty" className="block text-sm font-medium text-gray-700 mb-1">Shop Specialty</label>
+                    <label htmlFor="speciality" className="block text-sm font-medium text-gray-700 mb-1">Shop Specialty</label>
                     <div className="relative">
                       <FiTag className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input type="text" name="specialty" id="specialty" value={formData.specialty} onChange={handleChange} required placeholder="e.g., Grains, Vegetables" className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500" />
+                      {/* Corrected name attribute to match state and Appwrite */}
+                      <input type="text" name="speciality" id="speciality" value={formData.speciality} onChange={handleChange} required placeholder="e.g., Grains, Vegetables" className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500" />
                     </div>
                   </div>
                   <div>

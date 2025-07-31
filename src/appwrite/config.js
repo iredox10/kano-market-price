@@ -4,8 +4,8 @@ import { Client, Account, Databases, Functions } from 'appwrite';
 const client = new Client();
 
 const appwriteConfig = {
-  endpoint: import.meta.env.VITE_APPWRITE_PROJECT_ID, // e.g., https://cloud.appwrite.io/v1
-  projectId: import.meta.env.VITE_APPWRITE_ENDPOINT,
+  endpoint: import.meta.env.VITE_APPWRITE_ENDPOINT, // e.g., https://cloud.appwrite.io/v1
+  projectId: import.meta.env.VITE_APPWRITE_PROJECT_ID,
 };
 
 client

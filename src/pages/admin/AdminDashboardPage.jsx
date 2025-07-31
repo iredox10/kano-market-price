@@ -1,10 +1,11 @@
 
 // src/pages/admin/AdminDashboardPage.js
-// The main overview page for the admin dashboard, now with live Firestore data.
+// The main overview page for the admin dashboard, now with live Appwrite data.
 
 import React, { useState, useEffect } from 'react';
-import { db } from '../../firebase/config';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { databases } from '../../appwrite/config';
+import { DATABASE_ID, USERS_COLLECTION_ID, SHOP_OWNERS_COLLECTION_ID, SHOP_APPLICATIONS_COLLECTION_ID } from '../../appwrite/constants';
+import { Query } from 'appwrite';
 import { FiBriefcase, FiUsers, FiClock } from 'react-icons/fi';
 
 const AdminStatCard = ({ icon, title, value, color, loading }) => (
@@ -28,28 +29,27 @@ const AdminDashboardPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const usersQuery = query(collection(db, 'users'));
-    const shopsQuery = query(collection(db, 'allShopOwners'), where('status', '==', 'Verified'));
-    const pendingQuery = query(collection(db, 'shopApplications'), where('status', '==', 'pending'));
+    const fetchStats = async () => {
+      try {
+        const usersPromise = databases.listDocuments(DATABASE_ID, USERS_COLLECTION_ID, [Query.limit(1)]);
+        const shopsPromise = databases.listDocuments(DATABASE_ID, SHOP_OWNERS_COLLECTION_ID, [Query.limit(1)]);
+        const pendingPromise = databases.listDocuments(DATABASE_ID, SHOP_APPLICATIONS_COLLECTION_ID, [Query.equal('status', 'pending'), Query.limit(1)]);
 
-    const unsubUsers = onSnapshot(usersQuery, (snapshot) => {
-      setStats(prev => ({ ...prev, totalUsers: snapshot.size }));
-      setLoading(false);
-    });
-    const unsubShops = onSnapshot(shopsQuery, (snapshot) => {
-      setStats(prev => ({ ...prev, totalShops: snapshot.size }));
-      setLoading(false);
-    });
-    const unsubPending = onSnapshot(pendingQuery, (snapshot) => {
-      setStats(prev => ({ ...prev, pendingVerifications: snapshot.size }));
-      setLoading(false);
-    });
+        const [usersRes, shopsRes, pendingRes] = await Promise.all([usersPromise, shopsPromise, pendingPromise]);
 
-    return () => {
-      unsubUsers();
-      unsubShops();
-      unsubPending();
+        setStats({
+          totalUsers: usersRes.total,
+          totalShops: shopsRes.total,
+          pendingVerifications: pendingRes.total,
+        });
+      } catch (error) {
+        console.error("Failed to fetch admin stats:", error);
+      } finally {
+        setLoading(false);
+      }
     };
+
+    fetchStats();
   }, []);
 
   return (
@@ -81,7 +81,6 @@ const AdminDashboardPage = () => {
 
       <div className="mt-10 bg-white p-6 rounded-lg shadow-md">
         <h2 className="text-xl font-bold text-gray-800 mb-4">Platform Activity</h2>
-        {/* In a real app, this would show a feed of recent signups, applications, etc. */}
         <p className="text-gray-600">Real-time analytics charts would be displayed here.</p>
       </div>
     </div>

@@ -1,0 +1,26 @@
+{
+    "projectId": "688728790002d970c427",
+    "endpoint": "https://fra.cloud.appwrite.io/v1",
+    "functions": [
+        {
+            "$id": "688763fb0008d4fc32db",
+            "name": "approove-function",
+            "runtime": "node-22",
+            "specification": "s-0.5vcpu-512mb",
+            "execute": [
+                "any"
+            ],
+            "events": [],
+            "scopes": [
+                "users.read"
+            ],
+            "schedule": "",
+            "timeout": 15,
+            "enabled": true,
+            "logging": true,
+            "entrypoint": "src/main.js",
+            "commands": "npm install",
+            "path": "functions/approove-function"
+        }
+    ]
+}

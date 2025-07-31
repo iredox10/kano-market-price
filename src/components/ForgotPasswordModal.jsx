@@ -1,10 +1,9 @@
 
 // src/components/ForgotPasswordModal.js
-// A modal for handling the password reset process.
+// A modal for handling the Appwrite password reset process.
 
 import React, { useState } from 'react';
-import { auth } from '../firebase/config';
-import { sendPasswordResetEmail } from 'firebase/auth';
+import { account } from '../appwrite/config'; // Import Appwrite account service
 import { FiX, FiMail, FiSend } from 'react-icons/fi';
 
 const ForgotPasswordModal = ({ isOpen, onClose, onEmailSent }) => {
@@ -18,7 +17,11 @@ const ForgotPasswordModal = ({ isOpen, onClose, onEmailSent }) => {
     setIsLoading(true);
 
     try {
-      await sendPasswordResetEmail(auth, email);
+      // The second argument is the URL the user will be sent to from their email.
+      // Make sure this matches a route in your App.js
+      const resetUrl = `${window.location.origin}/reset-password`;
+      await account.createRecovery(email, resetUrl);
+
       onEmailSent(`A password reset link has been sent to ${email}. Please check your inbox.`);
       onClose();
     } catch (err) {
