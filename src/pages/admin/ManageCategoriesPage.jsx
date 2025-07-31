@@ -1,7 +1,3 @@
-
-// src/pages/admin/ManageCategoriesPage.js
-// Page for admins to manage product categories.
-
 import React, { useState } from 'react';
 import { FiTag, FiPlus, FiTrash2 } from 'react-icons/fi';
 

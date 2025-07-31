@@ -1,24 +1,38 @@
 
 // src/components/InfoModal.js
-// A reusable modal for displaying success or error messages.
+// A reusable modal for displaying success, error, or informational messages.
 
 import React from 'react';
-import { FiX, FiCheckCircle, FiAlertTriangle } from 'react-icons/fi';
+import { FiX, FiCheckCircle, FiAlertTriangle, FiInfo } from 'react-icons/fi';
 
 const InfoModal = ({ isOpen, onClose, title, message, type = 'info' }) => {
   if (!isOpen) {
     return null;
   }
 
-  const isSuccess = type === 'success';
-  const iconColor = isSuccess ? 'text-green-500' : 'text-red-500';
-  const buttonColor = isSuccess ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' : 'bg-red-600 hover:bg-red-700 focus:ring-red-500';
+  // Determine icon and colors based on the modal type
+  const styleConfig = {
+    success: {
+      icon: <FiCheckCircle className="h-6 w-6 text-green-500" />,
+      buttonColor: 'bg-green-600 hover:bg-green-700 focus:ring-green-500',
+    },
+    error: {
+      icon: <FiAlertTriangle className="h-6 w-6 text-red-500" />,
+      buttonColor: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
+    },
+    info: {
+      icon: <FiInfo className="h-6 w-6 text-blue-500" />,
+      buttonColor: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500',
+    },
+  };
+
+  const { icon, buttonColor } = styleConfig[type] || styleConfig['info'];
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4">
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm text-center transform transition-all">
         <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-gray-100 mb-4">
-          {isSuccess ? <FiCheckCircle className={`h-6 w-6 ${iconColor}`} /> : <FiAlertTriangle className={`h-6 w-6 ${iconColor}`} />}
+          {icon}
         </div>
         <h3 className="text-lg leading-6 font-bold text-gray-900">{title}</h3>
         <div className="mt-2 px-4 text-sm">

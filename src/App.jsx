@@ -1,7 +1,4 @@
 
-// src/App.js
-// The main application component that sets up routing for all pages and dashboards.
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
@@ -39,6 +36,7 @@ import ManageShopsPage from './pages/admin/ManageShopsPage';
 import VerificationQueuePage from './pages/admin/VerificationQueuePage';
 import ManageMarketsPage from './pages/admin/ManageMarketsPage';
 import ManageCategoriesPage from './pages/admin/ManageCategoriesPage';
+import CategoryProductsPage from './pages/admin/CategoryProductsPage';
 import ManageUsersPage from './pages/admin/ManageUsersPage';
 
 // Placeholder pages for routing
@@ -98,6 +96,7 @@ export default function App() {
               <Route path="verification-queue" element={<VerificationQueuePage />} />
               <Route path="manage-markets" element={<ManageMarketsPage />} />
               <Route path="manage-categories" element={<ManageCategoriesPage />} />
+              <Route path="manage-categories/:categoryName" element={<CategoryProductsPage />} />
               <Route path="manage-users" element={<ManageUsersPage />} />
               <Route path="settings" element={<AdminSettings />} />
             </Route>
