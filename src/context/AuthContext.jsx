@@ -20,16 +20,13 @@ export const AuthProvider = ({ children }) => {
     const checkUserSession = async () => {
       try {
         const user = await account.get();
-        // If a session exists, get the user's full data from the database
         const userDoc = await databases.getDocument(
           DATABASE_ID,
           USERS_COLLECTION_ID,
           user.$id
         );
-        // Combine the auth data with the database data (which includes their role, favorites, etc.)
         setCurrentUser({ ...user, ...userDoc });
       } catch (error) {
-        // If no session is found, currentUser will be null
         setCurrentUser(null);
       } finally {
         setLoading(false);
@@ -41,11 +38,10 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     currentUser,
-    setCurrentUser, // We'll use this to update the state after login/logout
+    setCurrentUser, // Expose the setter function
     loading,
   };
 
-  // Don't render the app until the initial auth check is complete
   return (
     <AuthContext.Provider value={value}>
       {!loading && children}

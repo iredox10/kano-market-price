@@ -1,12 +1,10 @@
 
-// src/pages/LoginPage.js
-// Provides a form for users to log in using Appwrite, with role-based redirection.
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiMail, FiLock, FiAlertCircle } from 'react-icons/fi';
-import { account, databases } from '../appwrite/config'; // Import Appwrite services
-import { DATABASE_ID, USERS_COLLECTION_ID } from '../appwrite/constants'; // Import your Appwrite constants
+import { account, databases } from '../appwrite/config';
+import { DATABASE_ID, USERS_COLLECTION_ID } from '../appwrite/constants';
+import { useAuth } from '../context/AuthContext'; // Import the useAuth hook
 import InfoModal from '../components/InfoModal';
 import ForgotPasswordModal from '../components/ForgotPasswordModal';
 
@@ -18,6 +16,7 @@ const LoginPage = () => {
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
   const [infoModal, setInfoModal] = useState({ isOpen: false, title: '', message: '', type: 'info' });
   const navigate = useNavigate();
+  const { setCurrentUser } = useAuth(); // Get the setter function from the context
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -25,20 +24,20 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      // Step 1: Create a session (log the user in) with Appwrite
       await account.createEmailPasswordSession(email, password);
-
-      // Step 2: Get the logged-in user's account details
       const user = await account.get();
-
-      // Step 3: Fetch the user's data from the 'users' collection to get their role
       const userDoc = await databases.getDocument(
         DATABASE_ID,
         USERS_COLLECTION_ID,
         user.$id
       );
-      console.log(userDoc)
-      // Step 4: Redirect based on the user's role
+
+      // --- THE FIX ---
+      // 1. Manually update the global user state
+      const fullUserData = { ...user, ...userDoc };
+      setCurrentUser(fullUserData);
+
+      // 2. Now, redirect based on the role
       switch (userDoc.role) {
         case 'admin':
           navigate('/admin');
@@ -48,7 +47,6 @@ const LoginPage = () => {
           break;
         default:
           navigate('/my-account');
-          console.log('user', userDoc.role)
           break;
       }
     } catch (err) {

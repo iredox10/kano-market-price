@@ -1,5 +1,4 @@
 
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 // Layout Components
@@ -38,12 +37,12 @@ import ManageMarketsPage from './pages/admin/ManageMarketsPage';
 import ManageCategoriesPage from './pages/admin/ManageCategoriesPage';
 import CategoryProductsPage from './pages/admin/CategoryProductsPage';
 import ManageUsersPage from './pages/admin/ManageUsersPage';
+import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 
 // Placeholder pages for routing
 const About = () => <div className="text-center p-10 text-2xl">About Us</div>;
 const Privacy = () => <div className="text-center p-10 text-2xl">Privacy Policy</div>;
 const Contact = () => <div className="text-center p-10 text-2xl">Contact Us</div>;
-const AdminSettings = () => <div className="text-center p-10 text-2xl">Admin Settings Page</div>;
 
 
 export default function App() {
@@ -98,7 +97,7 @@ export default function App() {
               <Route path="manage-categories" element={<ManageCategoriesPage />} />
               <Route path="manage-categories/:categoryName" element={<CategoryProductsPage />} />
               <Route path="manage-users" element={<ManageUsersPage />} />
-              <Route path="settings" element={<AdminSettings />} />
+              <Route path="settings" element={<AdminSettingsPage />} />
             </Route>
           </Route>
         </Routes>
