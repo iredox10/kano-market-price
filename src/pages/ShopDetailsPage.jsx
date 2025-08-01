@@ -11,7 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import ContactShopModal from '../components/ContactShopModal';
 import ShopProductTable from '../components/ShopProductTable';
 import StarRating from '../components/StarRating';
-import { FiMapPin, FiClock, FiPhone, FiFacebook, FiInstagram, FiSend } from 'react-icons/fi';
+import { FiStar, FiMapPin, FiClock, FiPhone, FiFacebook, FiInstagram, FiSend } from 'react-icons/fi';
 import InfoModal from '../components/InfoModal';
 
 const ReviewForm = ({ shopId, onReviewSubmit }) => {
