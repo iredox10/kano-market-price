@@ -1,19 +1,51 @@
 
 // src/pages/LandingPage.js
-// The main landing page that assembles several components.
+// The main landing page, now fetching featured content from Appwrite.
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { databases } from '../appwrite/config';
+import { DATABASE_ID, PRODUCTS_COLLECTION_ID, SHOP_OWNERS_COLLECTION_ID } from '../appwrite/constants';
+import { Query } from 'appwrite';
 import HeroSection from '../components/HeroSection';
 import HowItWorksSection from '../components/HowItWorksSection';
-import ProductCard from '../components/ProductCard'; // Ensure this path is correct
+import ProductCard from '../components/ProductCard';
 import ShopOwnerCard from '../components/ShopOwnerCard';
-import { allProducts, allShopOwners } from '../data/mockData';
 
 const LandingPage = () => {
-  // Get first 4 items for the landing page
-  const featuredProducts = allProducts.slice(0, 4);
-  const topShopOwners = allShopOwners.slice(0, 4);
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [topShopOwners, setTopShopOwners] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeaturedData = async () => {
+      setLoading(true);
+      try {
+        const productsPromise = databases.listDocuments(
+          DATABASE_ID,
+          PRODUCTS_COLLECTION_ID,
+          [Query.limit(4)] // Get the first 4 products
+        );
+
+        const shopsPromise = databases.listDocuments(
+          DATABASE_ID,
+          SHOP_OWNERS_COLLECTION_ID,
+          [Query.limit(4)] // Get the first 4 shop owners
+        );
+
+        const [productsRes, shopsRes] = await Promise.all([productsPromise, shopsPromise]);
+
+        setFeaturedProducts(productsRes.documents);
+        setTopShopOwners(shopsRes.documents);
+      } catch (error) {
+        console.error("Failed to fetch featured data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedData();
+  }, []);
 
   return (
     <div className="bg-gray-50">
@@ -21,39 +53,37 @@ const LandingPage = () => {
 
       <HowItWorksSection />
 
-      {/* Redesigned Featured Products Section */}
-      <section className="py-20 bg-gray-900 text-white">
+      <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-extrabold">
-              Today's Market <span className="text-emerald-400">Highlights</span>
-            </h2>
-            <p className="mt-3 text-lg text-gray-400 max-w-2xl mx-auto">
-              A snapshot of the latest prices on essential items across Kano.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {featuredProducts.map(p => <ProductCard key={p.id} product={p} />)}
-          </div>
-          <div className="text-center mt-16">
-            <Link
-              to="/products"
-              className="bg-emerald-500 text-white px-8 py-3 rounded-full hover:bg-emerald-600 transition-all duration-300 font-semibold shadow-lg hover:shadow-emerald-500/30 text-lg transform hover:scale-105"
-            >
+          <h2 className="text-3xl font-bold text-center text-gray-800 mb-2">Featured Products</h2>
+          <p className="text-center text-gray-600 mb-10">Check out the latest prices on popular items.</p>
+          {loading ? (
+            <p className="text-center">Loading products...</p>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {featuredProducts.map(p => <ProductCard key={p.$id} product={p} />)}
+            </div>
+          )}
+          <div className="text-center mt-12">
+            <Link to="/products" className="bg-white border-2 border-green-600 text-green-600 px-8 py-3 rounded-full hover:bg-green-600 hover:text-white transition-all duration-300 font-semibold">
               View All Products
             </Link>
           </div>
         </div>
       </section>
 
-      <section className="bg-white py-20">
+      <section className="bg-white py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center text-gray-800 mb-2">Trusted Shop Owners</h2>
-          <p className="text-center text-gray-600 mb-12">Buy from the most reliable sellers in the market.</p>
-          <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {topShopOwners.map(o => <ShopOwnerCard key={o.id} owner={o} />)}
-          </div>
-          <div className="text-center mt-16">
+          <p className="text-center text-gray-600 mb-10">Buy from the most reliable sellers in the market.</p>
+          {loading ? (
+            <p className="text-center">Loading shops...</p>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              {topShopOwners.map(o => <ShopOwnerCard key={o.$id} owner={o} />)}
+            </div>
+          )}
+          <div className="text-center mt-12">
             <Link to="/shops" className="bg-green-600 text-white px-8 py-3 rounded-full hover:bg-green-700 transition-colors font-semibold">
               Discover More Shops
             </Link>
@@ -61,13 +91,13 @@ const LandingPage = () => {
         </div>
       </section>
 
-      <section className="aurora-background text-white py-20">
+      <section className="bg-green-700 text-white py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">See a Price? Share the Knowledge.</h2>
-          <p className="text-gray-300 max-w-2xl mx-auto mb-8">
-            Your 10-second contribution helps thousands of people in Kano make smarter shopping decisions. Be a community hero.
+          <h2 className="text-3xl font-bold mb-4">Help the Community!</h2>
+          <p className="text-green-200 max-w-2xl mx-auto mb-8">
+            Just saw a price? Share it with thousands of others. Your contribution helps everyone shop smarter.
           </p>
-          <Link to="/contribute" className="bg-white text-green-700 px-10 py-4 rounded-full hover:bg-gray-200 transition-all duration-300 font-bold text-lg transform hover:scale-105 shadow-lg">
+          <Link to="/contribute" className="bg-white text-green-700 px-10 py-4 rounded-full hover:bg-gray-200 transition-colors font-bold text-lg">
             Contribute a Price
           </Link>
         </div>
