@@ -1,18 +1,26 @@
 
 // src/components/ProductFilters.js
-// A component for filtering the main products page.
+// A component for filtering the main products page, powered by Appwrite data.
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { databases } from '../appwrite/config';
+import { DATABASE_ID, CATEGORIES_COLLECTION_ID } from '../appwrite/constants';
 import { FiSearch } from 'react-icons/fi';
 
-// Get unique categories from all products for the filter dropdown
-const getUniqueCategories = (products) => {
-  const categories = products.map(p => p.category);
-  return [...new Set(categories)];
-};
+const ProductFilters = ({ searchTerm, setSearchTerm, categoryFilter, setCategoryFilter, stockFilter, setStockFilter }) => {
+  const [categories, setCategories] = useState([]);
 
-const ProductFilters = ({ products, searchTerm, setSearchTerm, categoryFilter, setCategoryFilter, stockFilter, setStockFilter }) => {
-  const uniqueCategories = getUniqueCategories(products);
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await databases.listDocuments(DATABASE_ID, CATEGORIES_COLLECTION_ID);
+        setCategories(response.documents);
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-md mb-8 border border-gray-200">
@@ -39,8 +47,8 @@ const ProductFilters = ({ products, searchTerm, setSearchTerm, categoryFilter, s
             className="w-full h-11 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
           >
             <option value="">All Categories</option>
-            {uniqueCategories.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
+            {categories.map(cat => (
+              <option key={cat.$id} value={cat.name}>{cat.name}</option>
             ))}
           </select>
         </div>

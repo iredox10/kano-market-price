@@ -1,10 +1,8 @@
 
-// src/pages/ProductsPage.js
-// The main catalog page for browsing all products.
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { allProducts } from '../data/mockData';
+import { databases } from '../appwrite/config';
+import { DATABASE_ID, PRODUCTS_COLLECTION_ID } from '../appwrite/constants';
 import ProductCard from '../components/ProductCard';
 import ProductFilters from '../components/ProductFilters';
 import { FiChevronLeft, FiChevronRight, FiInbox } from 'react-icons/fi';
@@ -12,13 +10,40 @@ import { FiChevronLeft, FiChevronRight, FiInbox } from 'react-icons/fi';
 const PRODUCTS_PER_PAGE = 8;
 
 const ProductsPage = () => {
+  const [allProducts, setAllProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [stockFilter, setStockFilter] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        const response = await databases.listDocuments(DATABASE_ID, PRODUCTS_COLLECTION_ID);
+        setAllProducts(response.documents);
+      } catch (error) {
+        console.error("Failed to fetch products:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  const uniqueProducts = useMemo(() => {
+    const unique = new Map();
+    allProducts.forEach(product => {
+      if (!unique.has(product.name)) {
+        unique.set(product.name, product);
+      }
+    });
+    return Array.from(unique.values());
+  }, [allProducts]);
+
   const filteredProducts = useMemo(() => {
-    let products = allProducts;
+    let products = uniqueProducts;
 
     if (searchTerm) {
       products = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -30,7 +55,7 @@ const ProductsPage = () => {
       products = products.filter(p => p.stockStatus === 'In Stock');
     }
     return products;
-  }, [searchTerm, categoryFilter, stockFilter]);
+  }, [searchTerm, categoryFilter, stockFilter, uniqueProducts]);
 
   // Pagination logic
   const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
@@ -42,8 +67,7 @@ const ProductsPage = () => {
   const goToNextPage = () => setCurrentPage((page) => Math.min(page + 1, totalPages));
   const goToPreviousPage = () => setCurrentPage((page) => Math.max(page - 1, 1));
 
-  // Reset page to 1 when filters change
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, categoryFilter, stockFilter]);
 
@@ -67,10 +91,12 @@ const ProductsPage = () => {
           setStockFilter={setStockFilter}
         />
 
-        {currentProducts.length > 0 ? (
+        {loading ? (
+          <p className="text-center text-gray-500">Loading products...</p>
+        ) : currentProducts.length > 0 ? (
           <>
             <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-              {currentProducts.map(p => <ProductCard key={p.id} product={p} />)}
+              {currentProducts.map(p => <ProductCard key={p.$id} product={p} />)}
             </div>
             {totalPages > 1 && (
               <div className="flex justify-between items-center mt-12">
