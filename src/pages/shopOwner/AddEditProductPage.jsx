@@ -1,8 +1,12 @@
+
+// src/pages/shopOwner/AddEditProductPage.js
+// A form for shop owners to add or edit products, with price change recording.
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { databases, storage } from '../../appwrite/config';
-import { DATABASE_ID, PRODUCTS_COLLECTION_ID, PRODUCT_IMAGES_BUCKET_ID, CATEGORIES_COLLECTION_ID, SHOP_OWNERS_COLLECTION_ID } from '../../appwrite/constants';
+import { DATABASE_ID, PRODUCTS_COLLECTION_ID, PRODUCT_IMAGES_BUCKET_ID, CATEGORIES_COLLECTION_ID, SHOP_OWNERS_COLLECTION_ID, PRICE_HISTORY_COLLECTION_ID } from '../../appwrite/constants';
 import { ID, Query } from 'appwrite';
 import { FiPackage, FiTag, FiDollarSign, FiFileText, FiImage, FiSave, FiChevronLeft } from 'react-icons/fi';
 import InfoModal from '../../components/InfoModal';
@@ -20,6 +24,7 @@ const AddEditProductPage = () => {
     stockStatus: 'In Stock',
     description: '',
   });
+  const [originalPrice, setOriginalPrice] = useState(null); // State to hold the original price for comparison
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
   const [categories, setCategories] = useState([]);
@@ -47,6 +52,7 @@ const AddEditProductPage = () => {
             stockStatus: existingProduct.stockStatus,
             description: existingProduct.description,
           });
+          setOriginalPrice(existingProduct.ownerPrice); // Store the original price
         }
       } catch (error) {
         console.error("Failed to load initial data:", error);
@@ -84,22 +90,45 @@ const AddEditProductPage = () => {
         imageFileId = uploadedFile.$id;
       }
 
+      const newPrice = parseFloat(product.ownerPrice);
+
       const dataToSave = {
-        ...product,
-        ownerPrice: parseFloat(product.ownerPrice),
+        name: product.name,
+        category: product.category,
+        ownerPrice: newPrice,
+        stockStatus: product.stockStatus,
+        description: product.description,
         shopOwnerId: currentUser.$id,
         imageFileId: imageFileId,
-        // CORRECTED: Use the 'market' attribute that exists on the shop owner document.
-        // For a more robust solution, the cloud function should be updated.
         marketId: shopOwnerInfo.market,
         shop: shopOwnerInfo.name,
       };
 
       if (isEditMode) {
+        dataToSave.previousOwnerPrice = originalPrice;
+
         await databases.updateDocument(DATABASE_ID, PRODUCTS_COLLECTION_ID, id, dataToSave);
+
+        if (newPrice !== originalPrice) {
+          await databases.createDocument(DATABASE_ID, PRICE_HISTORY_COLLECTION_ID, ID.unique(), {
+            productid: id, // CORRECTED: Spelling changed to match Appwrite attribute
+            price: newPrice,
+            updatedAt: new Date().toISOString(),
+          });
+        }
+
         setModalInfo({ isOpen: true, title: 'Success!', message: 'Product has been updated successfully.', type: 'success' });
       } else {
-        await databases.createDocument(DATABASE_ID, PRODUCTS_COLLECTION_ID, ID.unique(), dataToSave);
+        dataToSave.previousOwnerPrice = newPrice;
+
+        const newProduct = await databases.createDocument(DATABASE_ID, PRODUCTS_COLLECTION_ID, ID.unique(), dataToSave);
+
+        await databases.createDocument(DATABASE_ID, PRICE_HISTORY_COLLECTION_ID, ID.unique(), {
+          productid: newProduct.$id, // CORRECTED: Spelling changed to match Appwrite attribute
+          price: newPrice,
+          updatedAt: new Date().toISOString(),
+        });
+
         setModalInfo({ isOpen: true, title: 'Success!', message: 'Product has been added successfully.', type: 'success' });
       }
     } catch (error) {

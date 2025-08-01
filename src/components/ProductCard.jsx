@@ -1,6 +1,6 @@
 
 // src/components/ProductCard.js
-// A reusable card with a functional favorite toggle and shop link.
+// A reusable card with a functional favorite toggle that now stores the price.
 
 import React from 'react';
 import { Link } from 'react-router-dom';
@@ -31,27 +31,35 @@ const ProductCard = ({ product }) => {
   const icon = categoryIcons[category] || <FiPackage size={20} />;
   const { currentUser, setCurrentUser } = useAuth();
 
-  const userFavorites = currentUser?.favoriteProductIds || [];
-  const isFavorite = userFavorites.includes($id);
+  const watchlist = (currentUser?.watchlist || []).map(item => JSON.parse(item));
+  const isFavorite = watchlist.some(item => item.productId === $id);
 
   const handleToggleFavorite = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     if (!currentUser) return;
 
-    const newFavorites = isFavorite
-      ? userFavorites.filter(id => id !== $id)
-      : [...userFavorites, $id];
+    let newWatchlistStrings;
+
+    if (isFavorite) {
+      newWatchlistStrings = (currentUser.watchlist || []).filter(itemStr => {
+        const item = JSON.parse(itemStr);
+        return item.productId !== $id;
+      });
+    } else {
+      const newItem = { productId: $id, priceAtAdd: ownerPrice };
+      const currentWatchlist = currentUser.watchlist || [];
+      newWatchlistStrings = [...currentWatchlist, JSON.stringify(newItem)];
+    }
 
     try {
       await databases.updateDocument(
         DATABASE_ID,
         USERS_COLLECTION_ID,
         currentUser.$id,
-        { favoriteProductIds: newFavorites }
+        { watchlist: newWatchlistStrings }
       );
-      // Instantly update the UI by updating the context
-      setCurrentUser(prev => ({ ...prev, favoriteProductIds: newFavorites }));
+      setCurrentUser(prev => ({ ...prev, watchlist: newWatchlistStrings }));
     } catch (error) {
       console.error("Failed to update favorites:", error);
     }
