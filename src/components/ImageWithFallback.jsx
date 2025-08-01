@@ -1,6 +1,9 @@
+
+// src/components/ImageWithFallback.js
+// A component that displays an image from Appwrite or a colored letter fallback.
+
 import React, { useState, useEffect } from 'react';
 import { storage } from '../appwrite/config';
-import { MARKET_IMAGES_BUCKET_ID, SHOP_LOGOS_BUCKET_ID, PRODUCT_IMAGES_BUCKET_ID } from '../appwrite/constants';
 
 const ImageWithFallback = ({ fileId, bucketId, fallbackText, className }) => {
   const [imageUrl, setImageUrl] = useState(null);
@@ -26,7 +29,6 @@ const ImageWithFallback = ({ fileId, bucketId, fallbackText, className }) => {
     return text.charAt(0).toUpperCase();
   };
 
-  // Simple hash function to get a color from a string
   const getColorFromText = (text) => {
     if (!text) return 'bg-gray-500';
     const colors = ['bg-green-500', 'bg-blue-500', 'bg-red-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500'];

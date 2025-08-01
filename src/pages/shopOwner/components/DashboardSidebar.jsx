@@ -1,8 +1,12 @@
+
+// src/pages/shopOwner/components/DashboardSidebar.js
+// Sidebar navigation for the Shop Owner Dashboard with a link back to the user account.
+
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { account } from '../../../appwrite/config'; // Import Appwrite account service
-import { useAuth } from '../../../context/AuthContext'; // Import useAuth to clear user state
-import { FiGrid, FiPackage, FiPlusSquare, FiSettings, FiLogOut } from 'react-icons/fi';
+import { account } from '../../../appwrite/config';
+import { useAuth } from '../../../context/AuthContext';
+import { FiGrid, FiPackage, FiPlusSquare, FiSettings, FiLogOut, FiUser } from 'react-icons/fi';
 
 const DashboardSidebar = () => {
   const navigate = useNavigate();
@@ -13,9 +17,9 @@ const DashboardSidebar = () => {
   const handleLogout = async () => {
     try {
       await account.deleteSession('current');
-      setCurrentUser(null); // Clear the user state in the context
+      setCurrentUser(null);
       console.log('Shop owner logged out successfully');
-      navigate('/login'); // Redirect to login page after logout
+      navigate('/login');
     } catch (error) {
       console.error("Failed to log out:", error);
     }
@@ -44,8 +48,12 @@ const DashboardSidebar = () => {
           Shop Settings
         </NavLink>
       </nav>
-      <div className="mt-auto">
-        <button onClick={handleLogout} className={`${linkClasses} w-full`}>
+      <div className="mt-auto pt-4 border-t">
+        <NavLink to="/my-account" className={linkClasses}>
+          <FiUser className="mr-3" />
+          Switch to My Account
+        </NavLink>
+        <button onClick={handleLogout} className={`${linkClasses} w-full mt-2`}>
           <FiLogOut className="mr-3" />
           Logout
         </button>

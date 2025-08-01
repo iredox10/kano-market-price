@@ -37,6 +37,7 @@ const ReviewForm = ({ shopId, onReviewSubmit }) => {
           userName: currentUser.name,
           rating: rating,
           comment: comment,
+          createdAt: new Date(),
         }
       );
       // In a real app, a cloud function would then update the shop's average rating.

@@ -1,6 +1,6 @@
 
 // src/pages/MyAccountPage.js
-// A page for logged-in users to manage their account, now fully integrated with Appwrite.
+// A page for logged-in users to manage their account, with a link to the owner dashboard if applicable.
 
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -10,7 +10,7 @@ import { Query } from 'appwrite';
 import { useAuth } from '../context/AuthContext';
 import MyPriceWatchlist from '../components/MyPriceWatchlist';
 import BecomeASeller from '../components/BecomeASeller';
-import { FiUser, FiList, FiHeart, FiSave, FiLogOut, FiShoppingBag } from 'react-icons/fi';
+import { FiUser, FiList, FiHeart, FiSave, FiLogOut, FiShoppingBag, FiGrid } from 'react-icons/fi';
 import InfoModal from '../components/InfoModal';
 
 // --- Sub-components for the tabs ---
@@ -179,7 +179,16 @@ const MyAccountPage = () => {
               <TabButton id="watchlist" label="My Price Watchlist" icon={<FiHeart className="mr-3" />} />
               <TabButton id="contributions" label="My Contributions" icon={<FiList className="mr-3" />} />
               <TabButton id="settings" label="Profile Settings" icon={<FiUser className="mr-3" />} />
-              {!isShopOwner && <TabButton id="become-seller" label="Become a Seller" icon={<FiShoppingBag className="mr-3" />} />}
+
+              {/* --- THE FIX --- */}
+              {isShopOwner ? (
+                <Link to="/dashboard" className="flex items-center px-4 py-3 font-semibold rounded-lg text-gray-600 hover:bg-gray-100">
+                  <FiGrid className="mr-3" /> Switch to Dashboard
+                </Link>
+              ) : (
+                <TabButton id="become-seller" label="Become a Seller" icon={<FiShoppingBag className="mr-3" />} />
+              )}
+
               <button onClick={handleLogout} className="flex items-center px-4 py-3 font-semibold rounded-lg transition-colors w-full text-left text-gray-600 hover:bg-gray-100">
                 <FiLogOut className="mr-3" /> Logout
               </button>

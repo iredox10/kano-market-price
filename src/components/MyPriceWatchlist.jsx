@@ -4,9 +4,10 @@ import { Link } from 'react-router-dom';
 import { databases } from '../appwrite/config';
 import { FiArrowUp, FiArrowDown, FiMinus, FiEye, FiTrash2, FiInbox, FiShoppingCart, FiTrendingDown, FiTag, FiBarChart2 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
-import { DATABASE_ID, PRODUCTS_COLLECTION_ID, USERS_COLLECTION_ID } from '../appwrite/constants';
+import { DATABASE_ID, PRODUCTS_COLLECTION_ID, USERS_COLLECTION_ID, PRODUCT_IMAGES_BUCKET_ID } from '../appwrite/constants';
 import { Query } from 'appwrite';
 import PriceChartModal from './PriceChartModal';
+import ImageWithFallback from './ImageWithFallback'; // Import the new component
 
 const PriceTrendIndicator = ({ current, previous }) => {
   if (typeof current !== 'number' || typeof previous !== 'number') return null;
@@ -78,8 +79,6 @@ const MyPriceWatchlist = () => {
       return sum + (product.ownerPrice || 0);
     }, 0);
 
-    // --- THE FIX ---
-    // Correctly compare the current ownerPrice to the price when the item was added.
     const priceDrops = watchedProducts.filter(p => p.ownerPrice < p.priceAtAdd).length;
 
     return { totalValue, priceDrops };
@@ -140,7 +139,12 @@ const MyPriceWatchlist = () => {
                   <tr key={product.$id} className="border-b border-gray-200 hover:bg-gray-50">
                     <td className="px-5 py-4">
                       <div className="flex items-center">
-                        <div className="w-16 h-16 bg-gray-200 rounded-md mr-4 flex-shrink-0"></div>
+                        <ImageWithFallback
+                          fileId={product.imageFileId}
+                          bucketId={PRODUCT_IMAGES_BUCKET_ID}
+                          fallbackText={product.name}
+                          className="w-16 h-16 object-cover rounded-md mr-4 flex-shrink-0"
+                        />
                         <div>
                           <p className="text-gray-900 font-semibold">{product.name}</p>
                           <p className="text-gray-600 text-sm">{product.category}</p>
