@@ -1,21 +1,43 @@
 
 // src/pages/ShopsPage.js
-// This page displays a list of all shop owners with search functionality.
+// This page displays a list of all shop owners with search functionality, powered by Appwrite.
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { FiSearch } from 'react-icons/fi';
-import { allShopOwners } from '../data/mockData';
+import { FiSearch, FiInbox } from 'react-icons/fi';
+import { databases } from '../appwrite/config';
+import { DATABASE_ID, SHOP_OWNERS_COLLECTION_ID } from '../appwrite/constants';
 import ShopOwnerCard from '../components/ShopOwnerCard';
 
 const ShopsPage = () => {
+  const [shops, setShops] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Filter shop owners based on search term (name or specialty)
-  const filteredShops = allShopOwners.filter(owner =>
-    owner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    owner.specialty.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    const fetchShops = async () => {
+      setLoading(true);
+      try {
+        const response = await databases.listDocuments(
+          DATABASE_ID,
+          SHOP_OWNERS_COLLECTION_ID
+        );
+        setShops(response.documents);
+      } catch (error) {
+        console.error("Failed to fetch shop owners:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchShops();
+  }, []);
+
+  const filteredShops = useMemo(() => {
+    return shops.filter(owner =>
+      owner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      owner.specialty.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [searchTerm, shops]);
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -46,15 +68,18 @@ const ShopsPage = () => {
       {/* Shops Grid */}
       <section className="py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          {filteredShops.length > 0 ? (
+          {loading ? (
+            <p className="text-center text-gray-500">Loading shops...</p>
+          ) : filteredShops.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredShops.map(owner => (
-                <ShopOwnerCard key={owner.id} owner={owner} />
+                <ShopOwnerCard key={owner.$id} owner={owner} />
               ))}
             </div>
           ) : (
             <div className="text-center py-12">
-              <h2 className="text-2xl font-semibold text-gray-700">No Shops Found</h2>
+              <FiInbox className="mx-auto h-16 w-16 text-gray-400" />
+              <h2 className="mt-4 text-2xl font-semibold text-gray-700">No Shops Found</h2>
               <p className="mt-2 text-gray-500">
                 We couldn't find any shops matching "{searchTerm}". Try a different search.
               </p>

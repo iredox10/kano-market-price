@@ -14,6 +14,8 @@ export const SHOP_APPLICATIONS_COLLECTION_ID = '68872cc3002585de7eeb';
 export const PRODUCTS_COLLECTION_ID = '68872df8003468736b2f';
 export const PRICE_CONTRIBUTIONS_COLLECTION_ID = '68873082003c3a9eb6ca'; // For community prices
 export const SHOP_OWNERS_TEAM_ID = '688750a3001bf7df048b'
+export const REVIEWS_COLLECTION_ID = '688c8d43000ed06708dc'
+
 // --- Storage Buckets ---
 export const MARKET_IMAGES_BUCKET_ID = '68872f08003b08eb2ad5';
 export const SHOP_LOGOS_BUCKET_ID = '68872f180015f9c4675c';
