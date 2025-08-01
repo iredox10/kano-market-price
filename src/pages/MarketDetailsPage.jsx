@@ -1,12 +1,16 @@
 
 // src/pages/MarketDetailsPage.js
-// Displays a rich, detailed page for a single market with a shop search and table.
+// A page to display details for a single market, with a searchable and paginated list of its shops.
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { allShopOwners, allMarkets } from '../data/mockData';
+import { databases } from '../appwrite/config';
+import { DATABASE_ID, MARKETS_COLLECTION_ID, SHOP_OWNERS_COLLECTION_ID } from '../appwrite/constants';
+import { Query } from 'appwrite';
 import MarketShopTable from '../components/MarketShopTable';
-import { FiClock, FiTag, FiMapPin, FiSearch } from 'react-icons/fi';
+import { FiClock, FiTag, FiMapPin, FiSearch, FiInbox } from 'react-icons/fi';
+import ImageWithFallback from '../components/ImageWithFallback';
+import { MARKET_IMAGES_BUCKET_ID } from '../appwrite/constants';
 
 const InfoCard = ({ icon, title, children }) => (
   <div className="bg-white p-6 rounded-lg shadow-md">
@@ -21,30 +25,67 @@ const InfoCard = ({ icon, title, children }) => (
 );
 
 const MarketDetailsPage = () => {
-  const { marketName } = useParams();
-  const market = allMarkets.find(m => m.slug === marketName);
+  const { marketName } = useParams(); // This is the slug
+  const [market, setMarket] = useState(null);
+  const [shops, setShops] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const marketShops = market
-    ? allShopOwners.filter(s => s.market === market.name)
-    : [];
+  useEffect(() => {
+    const fetchMarketData = async () => {
+      setLoading(true);
+      try {
+        // 1. Fetch the market details using the slug
+        const marketRes = await databases.listDocuments(
+          DATABASE_ID,
+          MARKETS_COLLECTION_ID,
+          [Query.equal('slug', marketName)]
+        );
+
+        if (marketRes.documents.length > 0) {
+          const foundMarket = marketRes.documents[0];
+          setMarket(foundMarket);
+
+          // 2. Fetch all shops that belong to this market by name
+          const shopsRes = await databases.listDocuments(
+            DATABASE_ID,
+            SHOP_OWNERS_COLLECTION_ID,
+            [Query.equal('market', foundMarket.name)]
+          );
+          setShops(shopsRes.documents);
+        } else {
+          console.error("Market not found");
+        }
+      } catch (error) {
+        console.error("Failed to fetch market data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMarketData();
+  }, [marketName]);
 
   const filteredShops = useMemo(() => {
     if (!searchTerm) {
-      return marketShops;
+      return shops;
     }
-    return marketShops.filter(shop =>
+    return shops.filter(shop =>
       shop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       shop.specialty.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [searchTerm, marketShops]);
+  }, [searchTerm, shops]);
+
+  if (loading) {
+    return <p className="text-center p-12">Loading market details...</p>;
+  }
 
   if (!market) {
     return (
       <div className="text-center py-20">
         <h2 className="text-2xl font-semibold text-gray-700">Market not found</h2>
-        <Link to="/" className="mt-4 inline-block bg-green-600 text-white px-6 py-3 rounded-full hover:bg-green-700">
-          Back to Home
+        <Link to="/markets" className="mt-4 inline-block bg-green-600 text-white px-6 py-3 rounded-full hover:bg-green-700">
+          Back to All Markets
         </Link>
       </div>
     );
@@ -60,10 +101,10 @@ const MarketDetailsPage = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: Info */}
+          {/* Left Column: Info and Image */}
           <div className="lg:col-span-1 space-y-8">
-            <InfoCard icon={<FiMapPin size={24} />} title="Market Location">
-              <p>{market.name}, Kano, Nigeria</p>
+            <InfoCard icon={<FiMapPin size={24} />} title="Location">
+              <p>{market.location || 'Kano, Nigeria'}</p>
             </InfoCard>
 
             <InfoCard icon={<FiClock size={24} />} title="Opening Hours">
@@ -81,6 +122,15 @@ const MarketDetailsPage = () => {
                 <p className="text-gray-500">Not specified</p>
               )}
             </InfoCard>
+
+            <div className="bg-white rounded-lg shadow-md overflow-hidden">
+              <ImageWithFallback
+                fileId={market.imageFileId}
+                bucketId={MARKET_IMAGES_BUCKET_ID}
+                fallbackText={market.name}
+                className="w-full h-48 object-cover"
+              />
+            </div>
           </div>
 
           {/* Right Column: Shops Table with Search */}
@@ -91,14 +141,21 @@ const MarketDetailsPage = () => {
                 <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search shops..."
+                  placeholder="Search shops in this market..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
               </div>
             </div>
-            <MarketShopTable shops={filteredShops} />
+            {filteredShops.length > 0 ? (
+              <MarketShopTable shops={filteredShops} />
+            ) : (
+              <div className="bg-white text-center py-12 rounded-lg shadow-md">
+                <FiInbox className="mx-auto h-12 w-12 text-gray-400" />
+                <p className="mt-4 text-gray-600">No shops found matching your search in this market.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

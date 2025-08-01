@@ -1,24 +1,41 @@
-
-// src/pages/MarketsPage.js
-// A page to browse and search all available markets.
-
-import React, { useState, useMemo } from 'react';
-import { allMarkets } from '../data/mockData';
+import React, { useState, useEffect, useMemo } from 'react';
+import { databases } from '../appwrite/config';
+import { DATABASE_ID, MARKETS_COLLECTION_ID } from '../appwrite/constants';
 import MarketCard from '../components/MarketCard';
-import { FiSearch } from 'react-icons/fi';
+import { FiSearch, FiInbox } from 'react-icons/fi';
 
 const MarketsPage = () => {
+  const [markets, setMarkets] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    const fetchMarkets = async () => {
+      setLoading(true);
+      try {
+        const response = await databases.listDocuments(
+          DATABASE_ID,
+          MARKETS_COLLECTION_ID
+        );
+        setMarkets(response.documents);
+      } catch (error) {
+        console.error("Failed to fetch markets:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMarkets();
+  }, []);
 
   const filteredMarkets = useMemo(() => {
     if (!searchTerm) {
-      return allMarkets;
+      return markets;
     }
-    return allMarkets.filter(market =>
+    return markets.filter(market =>
       market.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       market.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [searchTerm]);
+  }, [searchTerm, markets]);
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -43,11 +60,23 @@ const MarketsPage = () => {
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredMarkets.map(market => (
-            <MarketCard key={market.slug} market={market} />
-          ))}
-        </div>
+        {loading ? (
+          <p className="text-center text-gray-500">Loading markets...</p>
+        ) : filteredMarkets.length > 0 ? (
+          <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredMarkets.map(market => (
+              <MarketCard key={market.$id} market={market} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16">
+            <FiInbox className="mx-auto h-16 w-16 text-gray-400" />
+            <h2 className="mt-4 text-2xl font-semibold text-gray-700">No Markets Found</h2>
+            <p className="mt-2 text-gray-500">
+              We couldn't find any markets matching your search.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
