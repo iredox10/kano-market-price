@@ -111,7 +111,7 @@ const AddEditProductPage = () => {
 
         if (newPrice !== originalPrice) {
           await databases.createDocument(DATABASE_ID, PRICE_HISTORY_COLLECTION_ID, ID.unique(), {
-            productid: id, // CORRECTED: Spelling changed to match Appwrite attribute
+            productid: id,
             price: newPrice,
             updatedAt: new Date().toISOString(),
           });
@@ -119,12 +119,15 @@ const AddEditProductPage = () => {
 
         setModalInfo({ isOpen: true, title: 'Success!', message: 'Product has been updated successfully.', type: 'success' });
       } else {
+        // --- THE FIX ---
+        // Add the missing 'originalPrice' attribute that your database requires for new products.
+        dataToSave.originalPrice = newPrice;
         dataToSave.previousOwnerPrice = newPrice;
 
         const newProduct = await databases.createDocument(DATABASE_ID, PRODUCTS_COLLECTION_ID, ID.unique(), dataToSave);
 
         await databases.createDocument(DATABASE_ID, PRICE_HISTORY_COLLECTION_ID, ID.unique(), {
-          productid: newProduct.$id, // CORRECTED: Spelling changed to match Appwrite attribute
+          productid: newProduct.$id,
           price: newPrice,
           updatedAt: new Date().toISOString(),
         });
