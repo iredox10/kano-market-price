@@ -1,6 +1,4 @@
 
-// src/components/PriceHistoryChart.js
-// Displays a chart of price history with time-frame selectors.
 
 import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -8,10 +6,18 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 const PriceHistoryChart = ({ priceHistory }) => {
   const [timeframe, setTimeframe] = useState('daily'); // 'daily', 'weekly', 'monthly'
 
-  // This is where you would normally process your data based on the timeframe.
-  // For this example, we'll just use the mock data directly.
-  const chartData = priceHistory[timeframe];
+  // --- THE FIX ---
+  // If priceHistory is null or doesn't have the selected timeframe, don't render the chart.
+  if (!priceHistory || !priceHistory[timeframe]) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6 mt-8 text-center">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Price History</h3>
+        <p className="text-gray-500">Price history is not available for this item.</p>
+      </div>
+    );
+  }
 
+  const chartData = priceHistory[timeframe];
   const timeframes = ['daily', 'weekly', 'monthly'];
 
   return (
@@ -24,8 +30,8 @@ const PriceHistoryChart = ({ priceHistory }) => {
               key={frame}
               onClick={() => setTimeframe(frame)}
               className={`px-4 py-2 text-sm font-semibold rounded-full transition-colors ${timeframe === frame
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
             >
               {frame.charAt(0).toUpperCase() + frame.slice(1)}
