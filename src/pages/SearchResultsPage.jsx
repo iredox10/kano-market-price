@@ -1,10 +1,11 @@
+
 // src/pages/SearchResultsPage.js
 // Displays search results with advanced filtering and sorting, powered by Appwrite.
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { databases } from '../appwrite/config';
-import { DATABASE_ID, PRODUCTS_COLLECTION_ID, SHOP_OWNERS_COLLECTION_ID } from '../appwrite/constants';
+import { DATABASE_ID, PRODUCTS_COLLECTION_ID, SHOP_OWNERS_COLLECTION_ID, PRICE_CONTRIBUTIONS_COLLECTION_ID } from '../appwrite/constants';
 import { Query } from 'appwrite';
 import PriceListTable from '../components/PriceListTable';
 import FilterControls from '../components/FilterControls';
@@ -16,6 +17,7 @@ const SearchResultsPage = () => {
   const query = searchParams.get('q') || 'rice';
 
   const [products, setProducts] = useState([]);
+  const [communityPrices, setCommunityPrices] = useState([]); // State for community prices
   const [shopOwnersMap, setShopOwnersMap] = useState({});
   const [loading, setLoading] = useState(true);
 
@@ -27,7 +29,6 @@ const SearchResultsPage = () => {
     const fetchSearchResults = async () => {
       setLoading(true);
       try {
-        // 1. Fetch all shop owners to create a map of ID to name for easy lookup
         const ownersRes = await databases.listDocuments(DATABASE_ID, SHOP_OWNERS_COLLECTION_ID);
         const ownersMap = ownersRes.documents.reduce((acc, owner) => {
           acc[owner.$id] = owner;
@@ -35,15 +36,26 @@ const SearchResultsPage = () => {
         }, {});
         setShopOwnersMap(ownersMap);
 
-        // 2. Fetch products matching the search query
-        // This Query.search performs a full-text search on the 'name' attribute.
-        // It will find "rice" inside "Rice (50kg Bag)", "Local Rice", etc.
         const productsRes = await databases.listDocuments(
           DATABASE_ID,
           PRODUCTS_COLLECTION_ID,
           [Query.search('name', query)]
         );
         setProducts(productsRes.documents);
+
+        // --- THE FIX ---
+        // After finding products, fetch all community contributions for those products.
+        if (productsRes.documents.length > 0) {
+          const productIds = productsRes.documents.map(p => p.$id);
+          const contributionsRes = await databases.listDocuments(
+            DATABASE_ID,
+            PRICE_CONTRIBUTIONS_COLLECTION_ID,
+            [Query.equal('productId', productIds)]
+          );
+          setCommunityPrices(contributionsRes.documents);
+        } else {
+          setCommunityPrices([]);
+        }
 
       } catch (error) {
         console.error("Failed to fetch search results:", error);
@@ -57,14 +69,16 @@ const SearchResultsPage = () => {
     } else {
       setLoading(false);
       setProducts([]);
+      setCommunityPrices([]);
     }
   }, [query]);
 
   const priceEntries = useMemo(() => {
     const initialEntries = [];
+
+    // Add owner prices to the list
     products.forEach(product => {
       const shopOwner = shopOwnersMap[product.shopOwnerId];
-      // Owner price entry
       initialEntries.push({
         uniqueId: `${product.$id}-owner`, productId: product.$id, productName: product.name, productImage: product.imageFileId,
         price: product.ownerPrice, previousPrice: product.previousOwnerPrice,
@@ -72,8 +86,21 @@ const SearchResultsPage = () => {
         market: shopOwner?.market, stockStatus: product.stockStatus, date: new Date(product.$createdAt), priceHistory: null,
       });
     });
+
+    // Add community prices to the list
+    communityPrices.forEach(contribution => {
+      const product = products.find(p => p.$id === contribution.productId);
+      if (product) {
+        initialEntries.push({
+          uniqueId: `${contribution.$id}-community`, productId: product.$id, productName: product.name, productImage: product.imageFileId,
+          price: contribution.price, sourceName: 'Community', sourceType: 'Community',
+          market: contribution.marketName, stockStatus: 'In Stock', date: new Date(contribution.submittedAt), priceHistory: null,
+        });
+      }
+    });
+
     return initialEntries;
-  }, [products, shopOwnersMap]);
+  }, [products, communityPrices, shopOwnersMap]);
 
   const searchSummaryStats = useMemo(() => {
     if (priceEntries.length === 0) return { count: 0, lowestPrice: 0, averagePrice: 0 };

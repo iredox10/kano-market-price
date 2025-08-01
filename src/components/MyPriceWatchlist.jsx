@@ -1,7 +1,4 @@
 
-// src/components/MyPriceWatchlist.js
-// A component for users to track their favorite products with price trends and a chart modal.
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { databases } from '../appwrite/config';
@@ -9,7 +6,7 @@ import { FiArrowUp, FiArrowDown, FiMinus, FiEye, FiTrash2, FiInbox, FiShoppingCa
 import { useAuth } from '../context/AuthContext';
 import { DATABASE_ID, PRODUCTS_COLLECTION_ID, USERS_COLLECTION_ID } from '../appwrite/constants';
 import { Query } from 'appwrite';
-import PriceChartModal from './PriceChartModal'; // Import the modal
+import PriceChartModal from './PriceChartModal';
 
 const PriceTrendIndicator = ({ current, previous }) => {
   if (typeof current !== 'number' || typeof previous !== 'number') return null;
@@ -34,7 +31,7 @@ const MyPriceWatchlist = () => {
   const { currentUser, setCurrentUser } = useAuth();
   const [watchedProducts, setWatchedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedProduct, setSelectedProduct] = useState(null); // For the modal
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
     const fetchWatchedProducts = async () => {
@@ -57,7 +54,7 @@ const MyPriceWatchlist = () => {
 
         const productsWithWatchData = response.documents.map(product => {
           const watchItem = userWatchlist.find(item => item.productId === product.$id);
-          return { ...product, priceAtAdd: watchItem.priceAtAdd };
+          return { ...product, priceAtAdd: watchItem?.priceAtAdd };
         });
 
         setWatchedProducts(productsWithWatchData);
@@ -80,6 +77,9 @@ const MyPriceWatchlist = () => {
     const totalValue = watchedProducts.reduce((sum, product) => {
       return sum + (product.ownerPrice || 0);
     }, 0);
+
+    // --- THE FIX ---
+    // Correctly compare the current ownerPrice to the price when the item was added.
     const priceDrops = watchedProducts.filter(p => p.ownerPrice < p.priceAtAdd).length;
 
     return { totalValue, priceDrops };
