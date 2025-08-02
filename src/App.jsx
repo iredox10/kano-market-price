@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 // Layout Components
@@ -22,6 +23,9 @@ import MarketDetailsPage from './pages/MarketDetailsPage';
 import MyAccountPage from './pages/MyAccountPage';
 import ShopApplicationPage from './pages/ShopApplicationPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import AboutPage from './pages/AboutPage';
+import ContactPage from './pages/ContactPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage'; // Import the new page
 
 // Dashboard Page Components
 import DashboardOverviewPage from './pages/shopOwner/DashboardOverviewPage';
@@ -39,11 +43,6 @@ import CategoryProductsPage from './pages/admin/CategoryProductsPage';
 import ManageUsersPage from './pages/admin/ManageUsersPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 
-// Placeholder pages for routing
-const About = () => <div className="text-center p-10 text-2xl">About Us</div>;
-const Privacy = () => <div className="text-center p-10 text-2xl">Privacy Policy</div>;
-const Contact = () => <div className="text-center p-10 text-2xl">Contact Us</div>;
-
 
 export default function App() {
   return (
@@ -56,16 +55,15 @@ export default function App() {
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/product/:id" element={<ProductDetailsPage />} />
             <Route path="/shops" element={<ShopsPage />} />
-            <Route path="/shop/:id" element={<ShopDetailsPage />} />
             <Route path="/markets" element={<MarketsPage />} />
             <Route path="/market/:marketName" element={<MarketDetailsPage />} />
             <Route path="/search" element={<SearchResultsPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/contact" element={<Contact />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/privacy" element={<PrivacyPolicyPage />} /> {/* Updated Route */}
+            <Route path="/contact" element={<ContactPage />} />
 
             {/* Protected User Routes */}
             <Route element={<ProtectedRoute />}>
