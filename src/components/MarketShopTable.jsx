@@ -1,10 +1,12 @@
 
 // src/components/MarketShopTable.js
-// A table to display all shops within a market, with pagination.
+// A table to display all shops within a market, with pagination and images.
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiChevronLeft, FiChevronRight, FiEye } from 'react-icons/fi';
+import ImageWithFallback from './ImageWithFallback'; // Import the image component
+import { SHOP_LOGOS_BUCKET_ID } from '../appwrite/constants';
 
 const SHOPS_PER_PAGE = 8;
 
@@ -42,10 +44,16 @@ const MarketShopTable = ({ shops }) => {
           </thead>
           <tbody>
             {currentShops.map(shop => (
-              <tr key={shop.id} className="border-b border-gray-200 hover:bg-gray-50">
+              <tr key={shop.$id} className="border-b border-gray-200 hover:bg-gray-50">
                 <td className="px-5 py-4">
                   <div className="flex items-center">
-                    <img src={shop.logoFileId} alt={shop.name} className="w-12 h-12 rounded-full mr-4 flex-shrink-0" />
+                    {/* --- THE FIX --- */}
+                    <ImageWithFallback
+                      fileId={shop.logoFileId}
+                      bucketId={SHOP_LOGOS_BUCKET_ID}
+                      fallbackText={shop.name}
+                      className="w-12 h-12 rounded-full mr-4 flex-shrink-0"
+                    />
                     <p className="text-gray-900 font-semibold whitespace-no-wrap">{shop.name}</p>
                   </div>
                 </td>
@@ -54,7 +62,7 @@ const MarketShopTable = ({ shops }) => {
                 </td>
                 <td className="px-5 py-4 text-center">
                   <Link
-                    to={`/shop/${shop.userId}`}
+                    to={`/shop/${shop.$id}`}
                     className="inline-flex items-center text-green-600 hover:text-green-800 font-semibold"
                   >
                     <FiEye className="mr-2" /> View Shop
