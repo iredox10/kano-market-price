@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiCheckCircle, FiUsers, FiArrowUp, FiArrowDown, FiMinus, FiChevronDown, FiChevronUp, FiAward, FiHeart } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
-import { databases } from '../appwrite/config'; // CORRECTED: Removed 'db' import
+import { databases } from '../appwrite/config';
 import PriceHistoryChart from './PriceHistoryChart';
 import WatchlistToast from './WatchlistToast';
 import ImageWithFallback from './ImageWithFallback';
@@ -84,7 +84,8 @@ const PriceListTable = ({ products: priceEntries }) => {
               <th className="px-5 py-3 font-semibold text-right">Price</th>
               <th className="px-5 py-3 font-semibold">Source</th>
               <th className="px-5 py-3 font-semibold">Stock</th>
-              <th className="px-5 py-3 font-semibold text-center">Actions</th>
+              <th className="px-5 py-3 font-semibold">Last Updated</th>
+              <th className="px-5 py-3 font-semibold text-center">Chart</th>
             </tr>
           </thead>
           <tbody>
@@ -125,9 +126,11 @@ const PriceListTable = ({ products: priceEntries }) => {
                             <p className="text-gray-900 font-semibold">{entry.sourceName}</p>
                           )}
                           {entry.market !== 'Various' ? (
-                            <Link to={`/market/${entry.market.replace(/\s+/g, '-')}`} className="text-gray-600 text-sm hover:text-green-600 hover:underline">
-                              {entry.market}
-                            </Link>
+                            <p>
+                              <Link to={`/market/${entry.market.replace(/\s+/g, '-')}`} className="text-gray-600 text-sm hover:text-green-600 hover:underline">
+                                {entry.market}
+                              </Link>
+                            </p>
                           ) : (
                             <p className="text-gray-600 text-sm">{entry.market}</p>
                           )}
@@ -136,6 +139,10 @@ const PriceListTable = ({ products: priceEntries }) => {
                     </td>
                     <td className="px-5 py-4">
                       {entry.stockStatus ? <StockStatusBadge status={entry.stockStatus} /> : <span className="text-gray-500">-</span>}
+                    </td>
+                    <td className="px-5 py-4">
+                      {/* --- THE FIX --- */}
+                      <p className="text-gray-700 whitespace-no-wrap text-sm">{entry.date.toLocaleString()}</p>
                     </td>
                     <td className="px-5 py-4 text-center">
                       <div className="flex items-center justify-center space-x-2">

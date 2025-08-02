@@ -3,7 +3,7 @@
 // A component to display key statistics about the search results.
 
 import React from 'react';
-import { FiTag, FiTrendingDown, FiBarChart2 } from 'react-icons/fi';
+import { FiTag, FiTrendingDown, FiTrendingUp } from 'react-icons/fi';
 
 const StatCard = ({ icon, title, value, color }) => (
   <div className={`bg-white p-4 rounded-lg shadow-sm border-l-4 ${color}`}>
@@ -17,11 +17,20 @@ const StatCard = ({ icon, title, value, color }) => (
   </div>
 );
 
-const SearchSummary = ({ count, lowestPrice, averagePrice }) => {
+const SearchSummary = ({ count, lowestPrice, highestPrice }) => {
   // Don't render the component if there are no results to summarize
   if (count === 0) {
     return null;
   }
+
+  // --- THE FIX ---
+  // Safely format the prices, providing a fallback if the value is not a valid number.
+  const formatPrice = (price) => {
+    if (typeof price === 'number') {
+      return `₦${price.toLocaleString()}`;
+    }
+    return 'N/A';
+  };
 
   return (
     <div className="mb-8">
@@ -35,14 +44,14 @@ const SearchSummary = ({ count, lowestPrice, averagePrice }) => {
         <StatCard
           icon={<FiTrendingDown size={24} />}
           title="Lowest Price"
-          value={`₦${lowestPrice.toLocaleString()}`}
+          value={formatPrice(lowestPrice)}
           color="border-green-500"
         />
         <StatCard
-          icon={<FiBarChart2 size={24} />}
-          title="Average Price"
-          value={`₦${Math.round(averagePrice).toLocaleString()}`}
-          color="border-yellow-500"
+          icon={<FiTrendingUp size={24} />}
+          title="Highest Price"
+          value={formatPrice(highestPrice)}
+          color="border-orange-500"
         />
       </div>
     </div>

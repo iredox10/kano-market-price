@@ -17,13 +17,14 @@ const SearchResultsPage = () => {
   const query = searchParams.get('q') || 'rice';
 
   const [products, setProducts] = useState([]);
-  const [communityPrices, setCommunityPrices] = useState([]); // State for community prices
+  const [communityPrices, setCommunityPrices] = useState([]);
   const [shopOwnersMap, setShopOwnersMap] = useState({});
   const [loading, setLoading] = useState(true);
 
   const [sortOption, setSortOption] = useState('price_asc');
   const [stockFilter, setStockFilter] = useState(false);
   const [marketFilter, setMarketFilter] = useState([]);
+  const [clientSearchTerm, setClientSearchTerm] = useState('');
 
   useEffect(() => {
     const fetchSearchResults = async () => {
@@ -43,8 +44,6 @@ const SearchResultsPage = () => {
         );
         setProducts(productsRes.documents);
 
-        // --- THE FIX ---
-        // After finding products, fetch all community contributions for those products.
         if (productsRes.documents.length > 0) {
           const productIds = productsRes.documents.map(p => p.$id);
           const contributionsRes = await databases.listDocuments(
@@ -76,7 +75,6 @@ const SearchResultsPage = () => {
   const priceEntries = useMemo(() => {
     const initialEntries = [];
 
-    // Add owner prices to the list
     products.forEach(product => {
       const shopOwner = shopOwnersMap[product.shopOwnerId];
       initialEntries.push({
@@ -87,7 +85,6 @@ const SearchResultsPage = () => {
       });
     });
 
-    // Add community prices to the list
     communityPrices.forEach(contribution => {
       const product = products.find(p => p.$id === contribution.productId);
       if (product) {
@@ -103,19 +100,26 @@ const SearchResultsPage = () => {
   }, [products, communityPrices, shopOwnersMap]);
 
   const searchSummaryStats = useMemo(() => {
-    if (priceEntries.length === 0) return { count: 0, lowestPrice: 0, averagePrice: 0 };
+    if (priceEntries.length === 0) return { count: 0, lowestPrice: 0, highestPrice: 0 };
     const prices = priceEntries.map(p => p.price);
     return {
       count: priceEntries.length,
       lowestPrice: Math.min(...prices),
-      averagePrice: prices.reduce((a, b) => a + b, 0) / prices.length,
+      highestPrice: Math.max(...prices), // CORRECTED: Calculate highest price
     };
   }, [priceEntries]);
 
   const processedEntries = useMemo(() => {
     let entries = [...priceEntries];
+
+    if (clientSearchTerm) {
+      entries = entries.filter(entry => entry.productName.toLowerCase().includes(clientSearchTerm.toLowerCase()));
+    }
     if (stockFilter) {
       entries = entries.filter(entry => entry.stockStatus === 'In Stock');
+    }
+    if (marketFilter.length > 0) {
+      entries = entries.filter(entry => marketFilter.includes(entry.market));
     }
 
     switch (sortOption) {
@@ -136,7 +140,7 @@ const SearchResultsPage = () => {
       entries[0] = { ...entries[0], bestPrice: true };
     }
     return entries;
-  }, [priceEntries, sortOption, stockFilter]);
+  }, [priceEntries, sortOption, stockFilter, marketFilter, clientSearchTerm]);
 
   const hasResults = processedEntries.length > 0;
 
@@ -162,6 +166,8 @@ const SearchResultsPage = () => {
           setStockFilter={setStockFilter}
           marketFilter={marketFilter}
           setMarketFilter={setMarketFilter}
+          searchTerm={clientSearchTerm}
+          setSearchTerm={setClientSearchTerm}
         />
 
         {loading ? (
@@ -171,7 +177,7 @@ const SearchResultsPage = () => {
             <FiSearch className="mx-auto h-16 w-16 text-gray-400" />
             <h2 className="mt-4 text-2xl font-semibold text-gray-700">No Matching Results Found</h2>
             <p className="mt-2 text-gray-500">
-              Try searching for a different term.
+              Try adjusting your filters or searching for a different term.
             </p>
             <Link to="/" className="mt-6 inline-block bg-green-600 text-white px-6 py-3 rounded-full hover:bg-green-700 font-semibold">
               Back to Home
