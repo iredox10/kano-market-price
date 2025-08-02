@@ -1,7 +1,3 @@
-
-// src/pages/SearchResultsPage.js
-// Displays search results with advanced filtering and sorting, powered by Appwrite.
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { databases } from '../appwrite/config';

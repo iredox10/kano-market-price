@@ -83,13 +83,10 @@ const MarketDetailsPage = () => {
 
   return (
     <div className="bg-gray-100 min-h-screen">
-      {/* New Image Overlay Header */}
       <div
-        className="relative bg-cover bg-center text-white"
+        className="relative bg-cover bg-center text-white h-[520px] md:h-[60vh]  "
         style={{
           backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.4)), url(${imageUrl || 'https://placehold.co/1920x1080/e2e8f0/e2e8f0'})`,
-          height: '40vh',
-          minHeight: '320px'
         }}
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-end pb-8">
