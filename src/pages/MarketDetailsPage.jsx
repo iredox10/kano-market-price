@@ -34,7 +34,7 @@ const MarketDetailsPage = () => {
 
           if (foundMarket.imageFileId) {
             const url = storage.getFilePreview(MARKET_IMAGES_BUCKET_ID, foundMarket.imageFileId);
-            setImageUrl(url.href);
+            setImageUrl(url);
           }
 
           const shopsRes = await databases.listDocuments(

@@ -1,15 +1,16 @@
 
 // src/components/PriceListTable.js
-// Displays a table of product prices with a toggleable "Add to Watchlist" feature.
+// Displays a table of product prices with images and an "Add to Watchlist" feature.
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiCheckCircle, FiUsers, FiArrowUp, FiArrowDown, FiMinus, FiChevronDown, FiChevronUp, FiAward, FiHeart } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
-import { db } from '../firebase/config';
-import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { databases } from '../appwrite/config'; // CORRECTED: Removed 'db' import
 import PriceHistoryChart from './PriceHistoryChart';
-import WatchlistToast from './WatchlistToast'; // Import the new toast component
+import WatchlistToast from './WatchlistToast';
+import ImageWithFallback from './ImageWithFallback';
+import { PRODUCT_IMAGES_BUCKET_ID, USERS_COLLECTION_ID, DATABASE_ID } from '../appwrite/constants';
 
 const StockStatusBadge = ({ status }) => {
   const colorClasses = {
@@ -34,33 +35,41 @@ const PriceTrendIndicator = ({ current, previous }) => {
 const PriceListTable = ({ products: priceEntries }) => {
   const [expandedRow, setExpandedRow] = useState(null);
   const [toastInfo, setToastInfo] = useState({ show: false, message: '', type: '' });
-  const { currentUser } = useAuth();
+  const { currentUser, setCurrentUser } = useAuth();
 
-  const userFavorites = currentUser?.favoriteProductIds || [];
+  const userFavorites = (currentUser?.watchlist || []).map(item => JSON.parse(item).productId);
 
   const toggleRow = (id) => {
     setExpandedRow(expandedRow === id ? null : id);
   };
 
-  const handleToggleWatchlist = async (productId, productName) => {
+  const handleToggleWatchlist = async (product) => {
     if (!currentUser) {
       alert("Please log in to manage your watchlist.");
       return;
     }
-    const userDocRef = doc(db, 'users', currentUser.uid);
-    const isFavorite = userFavorites.includes(productId);
+    const isFavorite = userFavorites.includes(product.productId);
+    let newWatchlistStrings;
+
+    if (isFavorite) {
+      newWatchlistStrings = currentUser.watchlist.filter(itemStr => JSON.parse(itemStr).productId !== product.productId);
+      setToastInfo({ show: true, message: `${product.productName} removed from watchlist`, type: 'removed' });
+    } else {
+      const newItem = { productId: product.productId, priceAtAdd: product.price };
+      newWatchlistStrings = [...(currentUser.watchlist || []), JSON.stringify(newItem)];
+      setToastInfo({ show: true, message: `${product.productName} added to watchlist!`, type: 'added' });
+    }
 
     try {
-      if (isFavorite) {
-        await updateDoc(userDocRef, { favoriteProductIds: arrayRemove(productId) });
-        setToastInfo({ show: true, message: `${productName} removed from watchlist`, type: 'removed' });
-      } else {
-        await updateDoc(userDocRef, { favoriteProductIds: arrayUnion(productId) });
-        setToastInfo({ show: true, message: `${productName} added to watchlist!`, type: 'added' });
-      }
+      await databases.updateDocument(
+        DATABASE_ID,
+        USERS_COLLECTION_ID,
+        currentUser.$id,
+        { watchlist: newWatchlistStrings }
+      );
+      setCurrentUser(prev => ({ ...prev, watchlist: newWatchlistStrings }));
     } catch (error) {
       console.error("Error updating watchlist: ", error);
-      alert("Failed to update watchlist.");
     }
   };
 
@@ -86,7 +95,12 @@ const PriceListTable = ({ products: priceEntries }) => {
                   <tr className={`border-b border-gray-200 hover:bg-gray-50 ${entry.bestPrice ? 'bg-green-50' : ''}`}>
                     <td className="px-5 py-4">
                       <div className="flex items-center">
-                        <img src={entry.productImage} alt={entry.productName} className="w-16 h-16 object-cover rounded-md mr-4 flex-shrink-0" />
+                        <ImageWithFallback
+                          fileId={entry.productImage}
+                          bucketId={PRODUCT_IMAGES_BUCKET_ID}
+                          fallbackText={entry.productName}
+                          className="w-16 h-16 object-cover rounded-md mr-4 flex-shrink-0"
+                        />
                         <Link to={`/product/${entry.productId}`} className="text-gray-900 font-semibold whitespace-no-wrap hover:text-green-600">
                           {entry.productName}
                         </Link>
@@ -127,7 +141,7 @@ const PriceListTable = ({ products: priceEntries }) => {
                       <div className="flex items-center justify-center space-x-2">
                         {currentUser && (
                           <button
-                            onClick={() => handleToggleWatchlist(entry.productId, entry.productName)}
+                            onClick={() => handleToggleWatchlist(entry)}
                             className={`p-2 rounded-full transition-colors ${isFavorite ? 'text-red-500 bg-red-100' : 'text-gray-500 hover:bg-gray-100'}`}
                             title={isFavorite ? "Remove from Watchlist" : "Add to Watchlist"}
                           >

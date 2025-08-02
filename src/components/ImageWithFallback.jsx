@@ -10,14 +10,16 @@ const ImageWithFallback = ({ fileId, bucketId, fallbackText, className }) => {
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    console.log('image', fileId, 'bucketId', bucketId)
     if (fileId) {
       try {
         const result = storage.getFilePreview(bucketId, fileId);
-        setImageUrl(result.href);
+        setImageUrl(result);
         setError(false);
       } catch (err) {
         console.error("Failed to get image preview:", err);
         setError(true);
+        console.log(err)
       }
     } else {
       setError(true);

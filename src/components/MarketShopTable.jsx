@@ -45,7 +45,7 @@ const MarketShopTable = ({ shops }) => {
               <tr key={shop.id} className="border-b border-gray-200 hover:bg-gray-50">
                 <td className="px-5 py-4">
                   <div className="flex items-center">
-                    <img src={shop.logo} alt={shop.name} className="w-12 h-12 rounded-full mr-4 flex-shrink-0" />
+                    <img src={shop.logoFileId} alt={shop.name} className="w-12 h-12 rounded-full mr-4 flex-shrink-0" />
                     <p className="text-gray-900 font-semibold whitespace-no-wrap">{shop.name}</p>
                   </div>
                 </td>
@@ -54,7 +54,7 @@ const MarketShopTable = ({ shops }) => {
                 </td>
                 <td className="px-5 py-4 text-center">
                   <Link
-                    to={`/shop/${shop.id}`}
+                    to={`/shop/${shop.userId}`}
                     className="inline-flex items-center text-green-600 hover:text-green-800 font-semibold"
                   >
                     <FiEye className="mr-2" /> View Shop
