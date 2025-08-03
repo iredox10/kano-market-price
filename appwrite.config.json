@@ -21,6 +21,26 @@
             "entrypoint": "src/main.js",
             "commands": "npm install",
             "path": "functions/approove-function"
+        },
+        {
+            "$id": "688dd899001b4517387d",
+            "name": "update-rating-function",
+            "runtime": "node-22",
+            "specification": "s-0.5vcpu-512mb",
+            "execute": [
+                "any"
+            ],
+            "events": [],
+            "scopes": [
+                "users.read"
+            ],
+            "schedule": "",
+            "timeout": 15,
+            "enabled": true,
+            "logging": true,
+            "entrypoint": "src/main.js",
+            "commands": "npm install",
+            "path": "functions/update-rating-function"
         }
     ]
 }

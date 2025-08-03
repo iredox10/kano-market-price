@@ -21,12 +21,12 @@ const PriceTrendIndicator = ({ current, previous }) => {
   if (typeof current !== 'number' || typeof previous !== 'number') return null;
 
   if (current > previous) {
-    return <FiArrowUp className="text-orange-500" title="Price increased" />;
+    return <FiArrowUp className="text-red-500" title="Price increased" />;
   }
   if (current < previous) {
     return <FiArrowDown className="text-green-500" title="Price decreased" />;
   }
-  return <FiMinus className="text-gray-400" title="Price stable" />;
+  return <FiMinus className="text-gray-500" title="Price stable" />;
 };
 
 const ShopProductTable = ({ products }) => {
@@ -62,12 +62,11 @@ const ShopProductTable = ({ products }) => {
           </thead>
           <tbody>
             {currentProducts.map(product => (
-              <tr key={product.$id} className="border-b border-gray-200 hover:bg-gray-50">
+              <tr key={product.id} className="border-b border-gray-200 hover:bg-gray-50">
                 <td className="px-5 py-4">
                   <div className="flex items-center">
-                    {/* In a real app with images, you'd use the ImageWithFallback component here */}
-                    <div className="w-16 h-16 bg-gray-200 rounded-md mr-4 flex-shrink-0"></div>
-                    <Link to={`/product/${product.$id}`} className="text-gray-900 font-semibold whitespace-no-wrap hover:text-green-600">
+                    <img src={product.imageField} alt={product.name} className="w-16 h-16 object-cover rounded-md mr-4 flex-shrink-0" />
+                    <Link to={`/product/${product.id}`} className="text-gray-900 font-semibold whitespace-no-wrap hover:text-green-600">
                       {product.name}
                     </Link>
                   </div>
@@ -75,11 +74,9 @@ const ShopProductTable = ({ products }) => {
                 <td className="px-5 py-4 text-right">
                   <div className="flex items-center justify-end">
                     <p className="text-gray-800 font-bold text-lg whitespace-no-wrap mr-2">
-                      {/* CORRECTED: Access ownerPrice directly */}
-                      {`₦${(product.ownerPrice || 0).toLocaleString()}`}
+                      {`₦${product.currentPrice.owner.toLocaleString()}`}
                     </p>
-                    {/* CORRECTED: Access previousOwnerPrice directly */}
-                    <PriceTrendIndicator current={product.ownerPrice} previous={product.previousOwnerPrice} />
+                    <PriceTrendIndicator current={product.currentPrice.owner} previous={product.currentPrice.previousOwnerPrice} />
                   </div>
                 </td>
                 <td className="px-5 py-4">

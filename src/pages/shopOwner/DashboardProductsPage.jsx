@@ -1,16 +1,17 @@
 
 // src/pages/shopOwner/DashboardProductsPage.js
-// A mobile-friendly page for shop owners to manage their products, now with search and filters.
+// A mobile-friendly page for shop owners to manage their products, now with images.
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { databases } from '../../appwrite/config';
-import { DATABASE_ID, PRODUCTS_COLLECTION_ID } from '../../appwrite/constants';
+import { DATABASE_ID, PRODUCTS_COLLECTION_ID, PRODUCT_IMAGES_BUCKET_ID } from '../../appwrite/constants';
 import { Query } from 'appwrite';
 import { FiEdit, FiTrash2, FiPlusCircle, FiChevronLeft, FiChevronRight, FiInbox, FiSearch } from 'react-icons/fi';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import InfoModal from '../../components/InfoModal';
+import ImageWithFallback from '../../components/ImageWithFallback'; // Import the image component
 
 const ITEMS_PER_PAGE = 8;
 
@@ -115,7 +116,6 @@ const DashboardProductsPage = () => {
           </Link>
         </div>
 
-        {/* Search and Filter Bar */}
         <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="relative">
@@ -147,8 +147,18 @@ const DashboardProductsPage = () => {
             <div className="space-y-4 md:hidden">
               {currentProducts.map(product => (
                 <div key={product.$id} className="bg-white p-4 rounded-lg shadow-md border">
-                  <p className="font-bold text-gray-800">{product.name}</p>
-                  <p className="text-sm text-gray-500">{product.category}</p>
+                  <div className="flex items-start gap-4">
+                    <ImageWithFallback
+                      fileId={product.imageFileId}
+                      bucketId={PRODUCT_IMAGES_BUCKET_ID}
+                      fallbackText={product.name}
+                      className="w-16 h-16 object-cover rounded-md flex-shrink-0"
+                    />
+                    <div className="flex-grow">
+                      <p className="font-bold text-gray-800">{product.name}</p>
+                      <p className="text-sm text-gray-500">{product.category}</p>
+                    </div>
+                  </div>
                   <div className="flex justify-between items-center mt-2">
                     <div>
                       <p className="text-green-600 font-bold">{`₦${product.ownerPrice.toLocaleString()}`}</p>
@@ -168,7 +178,7 @@ const DashboardProductsPage = () => {
               <table className="min-w-full leading-normal">
                 <thead>
                   <tr className="bg-gray-100 text-left text-gray-600 uppercase text-sm">
-                    <th className="px-5 py-3 font-semibold">Product Name</th>
+                    <th className="px-5 py-3 font-semibold">Product</th>
                     <th className="px-5 py-3 font-semibold">Category</th>
                     <th className="px-5 py-3 font-semibold">Price</th>
                     <th className="px-5 py-3 font-semibold">Stock Status</th>
@@ -178,7 +188,17 @@ const DashboardProductsPage = () => {
                 <tbody>
                   {currentProducts.map(product => (
                     <tr key={product.$id} className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="px-5 py-4"><p className="text-gray-900 font-semibold whitespace-no-wrap">{product.name}</p></td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center">
+                          <ImageWithFallback
+                            fileId={product.imageFileId}
+                            bucketId={PRODUCT_IMAGES_BUCKET_ID}
+                            fallbackText={product.name}
+                            className="w-16 h-16 object-cover rounded-md mr-4 flex-shrink-0"
+                          />
+                          <p className="text-gray-900 font-semibold whitespace-no-wrap">{product.name}</p>
+                        </div>
+                      </td>
                       <td className="px-5 py-4"><p className="text-gray-700 whitespace-no-wrap">{product.category}</p></td>
                       <td className="px-5 py-4"><p className="text-green-600 font-bold whitespace-no-wrap">{`₦${product.ownerPrice.toLocaleString()}`}</p></td>
                       <td className="px-5 py-4"><StockStatusBadge status={product.stockStatus} /></td>

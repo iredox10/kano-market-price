@@ -5,20 +5,21 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { databases } from '../appwrite/config';
-import { DATABASE_ID, SHOP_OWNERS_COLLECTION_ID, PRODUCTS_COLLECTION_ID, REVIEWS_COLLECTION_ID } from '../appwrite/constants';
+import { DATABASE_ID, SHOP_OWNERS_COLLECTION_ID, PRODUCTS_COLLECTION_ID, REVIEWS_COLLECTION_ID, SHOP_LOGOS_BUCKET_ID } from '../appwrite/constants';
 import { Query, ID } from 'appwrite';
 import { useAuth } from '../context/AuthContext';
 import ContactShopModal from '../components/ContactShopModal';
 import ShopProductTable from '../components/ShopProductTable';
 import StarRating from '../components/StarRating';
-import { FiStar, FiMapPin, FiClock, FiPhone, FiFacebook, FiInstagram, FiSend } from 'react-icons/fi';
-import InfoModal from '../components/InfoModal';
+import ImageWithFallback from '../components/ImageWithFallback';
+import { FiMapPin, FiClock, FiPhone, FiFacebook, FiInstagram, FiSend, FiStar } from 'react-icons/fi';
 
 const ReviewForm = ({ shopId, onReviewSubmit }) => {
   const { currentUser } = useAuth();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [hoverRating, setHoverRating] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,6 +27,7 @@ const ReviewForm = ({ shopId, onReviewSubmit }) => {
       alert("Please select a rating.");
       return;
     }
+    setIsSubmitting(true);
     try {
       await databases.createDocument(
         DATABASE_ID,
@@ -37,15 +39,20 @@ const ReviewForm = ({ shopId, onReviewSubmit }) => {
           userName: currentUser.name,
           rating: rating,
           comment: comment,
-          createdAt: new Date(),
+          // --- THE FIX ---
+          // Add the current timestamp to match the database structure
+          createdAt: new Date().toISOString(),
         }
       );
-      // In a real app, a cloud function would then update the shop's average rating.
+      // The Appwrite function will automatically update the shop's rating.
+      // We just need to re-fetch the data to show the new review.
       onReviewSubmit();
       setRating(0);
       setComment('');
     } catch (error) {
       console.error("Failed to submit review:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -80,8 +87,8 @@ const ReviewForm = ({ shopId, onReviewSubmit }) => {
         className="w-full p-2 border rounded-md focus:ring-green-500 focus:border-green-500"
         rows="3"
       ></textarea>
-      <button type="submit" className="mt-2 inline-flex items-center bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700">
-        <FiSend className="mr-2" /> Submit Review
+      <button type="submit" disabled={isSubmitting} className="mt-2 inline-flex items-center bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 disabled:bg-green-400">
+        <FiSend className="mr-2" /> {isSubmitting ? 'Submitting...' : 'Submit Review'}
       </button>
     </form>
   );
@@ -100,7 +107,6 @@ const ShopDetailsPage = () => {
     try {
       const [shopRes, productsRes, reviewsRes] = await Promise.all([
         databases.getDocument(DATABASE_ID, SHOP_OWNERS_COLLECTION_ID, id),
-        // CORRECTED: Query by 'shopOwnerId' instead of 'userId'
         databases.listDocuments(DATABASE_ID, PRODUCTS_COLLECTION_ID, [Query.equal('shopOwnerId', id)]),
         databases.listDocuments(DATABASE_ID, REVIEWS_COLLECTION_ID, [Query.equal('shopOwnerId', id)])
       ]);
@@ -129,7 +135,12 @@ const ShopDetailsPage = () => {
         <section className="bg-white py-12 shadow-sm">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row items-center">
-              <img src={shop.logoFileId || 'https://placehold.co/128x128/a7f3d0/14532d?text=Shop'} alt={shop.name} className="w-32 h-32 rounded-full border-4 border-green-500 mb-4 md:mb-0 md:mr-8" />
+              <ImageWithFallback
+                fileId={shop.logoFileId}
+                bucketId={SHOP_LOGOS_BUCKET_ID}
+                fallbackText={shop.name}
+                className="w-32 h-32 rounded-full border-4 border-green-500 mb-4 md:mb-0 md:mr-8 flex-shrink-0"
+              />
               <div className="flex-grow text-center md:text-left">
                 <h1 className="text-4xl font-bold text-gray-800">{shop.name}</h1>
                 <p className="text-xl text-gray-600 mt-1">{shop.specialty}</p>
@@ -171,7 +182,7 @@ const ShopDetailsPage = () => {
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <h3 className="text-2xl font-bold text-gray-800 mb-4">Ratings & Reviews</h3>
                 <div className="flex items-center mb-4">
-                  <p className="text-4xl font-bold text-gray-800 mr-3">{shop.averageRating?.toFixed(1) || '0.0'}</p>
+                  <p className="text-4xl font-bold text-gray-800 mr-3">{(shop.averageRating || 0).toFixed(1)}</p>
                   <div>
                     <StarRating rating={shop.averageRating || 0} />
                     <p className="text-sm text-gray-500">Based on {shop.reviewCount || 0} reviews</p>

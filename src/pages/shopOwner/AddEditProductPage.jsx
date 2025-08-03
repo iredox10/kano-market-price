@@ -1,6 +1,6 @@
 
 // src/pages/shopOwner/AddEditProductPage.js
-// A form for shop owners to add or edit products, with price change recording.
+// A form for shop owners to add or edit products, now with existing image display.
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
@@ -23,8 +23,9 @@ const AddEditProductPage = () => {
     ownerPrice: '',
     stockStatus: 'In Stock',
     description: '',
+    imageFileId: null, // Keep track of the existing file ID
   });
-  const [originalPrice, setOriginalPrice] = useState(null); // State to hold the original price for comparison
+  const [originalPrice, setOriginalPrice] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
   const [categories, setCategories] = useState([]);
@@ -51,8 +52,16 @@ const AddEditProductPage = () => {
             ownerPrice: existingProduct.ownerPrice,
             stockStatus: existingProduct.stockStatus,
             description: existingProduct.description,
+            imageFileId: existingProduct.imageFileId, // Store existing file ID
           });
-          setOriginalPrice(existingProduct.ownerPrice); // Store the original price
+          setOriginalPrice(existingProduct.ownerPrice);
+
+          // --- THE FIX ---
+          // If an image exists, get its preview URL and set it
+          if (existingProduct.imageFileId) {
+            const url = storage.getFilePreview(PRODUCT_IMAGES_BUCKET_ID, existingProduct.imageFileId);
+            setImagePreview(url.href);
+          }
         }
       } catch (error) {
         console.error("Failed to load initial data:", error);
@@ -83,9 +92,13 @@ const AddEditProductPage = () => {
     setIsLoading(true);
 
     try {
-      let imageFileId = product.imageFileId || null;
+      let imageFileId = product.imageFileId; // Start with the existing file ID
 
+      // 1. If a new image was selected, upload it and delete the old one
       if (imageFile) {
+        if (product.imageFileId) {
+          await storage.deleteFile(PRODUCT_IMAGES_BUCKET_ID, product.imageFileId);
+        }
         const uploadedFile = await storage.createFile(PRODUCT_IMAGES_BUCKET_ID, ID.unique(), imageFile);
         imageFileId = uploadedFile.$id;
       }
@@ -106,7 +119,6 @@ const AddEditProductPage = () => {
 
       if (isEditMode) {
         dataToSave.previousOwnerPrice = originalPrice;
-
         await databases.updateDocument(DATABASE_ID, PRODUCTS_COLLECTION_ID, id, dataToSave);
 
         if (newPrice !== originalPrice) {
@@ -116,14 +128,9 @@ const AddEditProductPage = () => {
             updatedAt: new Date().toISOString(),
           });
         }
-
         setModalInfo({ isOpen: true, title: 'Success!', message: 'Product has been updated successfully.', type: 'success' });
       } else {
-        // --- THE FIX ---
-        // Add the missing 'originalPrice' attribute that your database requires for new products.
-        dataToSave.originalPrice = newPrice;
         dataToSave.previousOwnerPrice = newPrice;
-
         const newProduct = await databases.createDocument(DATABASE_ID, PRODUCTS_COLLECTION_ID, ID.unique(), dataToSave);
 
         await databases.createDocument(DATABASE_ID, PRICE_HISTORY_COLLECTION_ID, ID.unique(), {
@@ -131,7 +138,6 @@ const AddEditProductPage = () => {
           price: newPrice,
           updatedAt: new Date().toISOString(),
         });
-
         setModalInfo({ isOpen: true, title: 'Success!', message: 'Product has been added successfully.', type: 'success' });
       }
     } catch (error) {
@@ -212,7 +218,7 @@ const AddEditProductPage = () => {
                 <div className="flex text-sm text-gray-600">
                   <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-green-600 hover:text-green-500 focus-within:outline-none p-2 border rounded-md">
                     <FiImage className="inline-block mr-2" />
-                    <span>Upload a file</span>
+                    <span>{imagePreview ? "Change Image" : "Upload Image"}</span>
                     <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleImageChange} accept="image/*" />
                   </label>
                 </div>
