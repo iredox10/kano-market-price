@@ -1,6 +1,6 @@
 
 // src/pages/shopOwner/DashboardProductsPage.js
-// A mobile-friendly page for shop owners to manage their products, now with images.
+// A mobile-friendly page for shop owners to manage their products, now with search and filters.
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
@@ -11,7 +11,7 @@ import { Query } from 'appwrite';
 import { FiEdit, FiTrash2, FiPlusCircle, FiChevronLeft, FiChevronRight, FiInbox, FiSearch } from 'react-icons/fi';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import InfoModal from '../../components/InfoModal';
-import ImageWithFallback from '../../components/ImageWithFallback'; // Import the image component
+import ImageWithFallback from '../../components/ImageWithFallback';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -116,6 +116,7 @@ const DashboardProductsPage = () => {
           </Link>
         </div>
 
+        {/* Search and Filter Bar */}
         <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="relative">
