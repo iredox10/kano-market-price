@@ -1,4 +1,7 @@
 
+// src/pages/ProductsPage.js
+// A redesigned catalog page with a compact, mobile-first design.
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { databases } from '../appwrite/config';
@@ -7,7 +10,7 @@ import ProductCard from '../components/ProductCard';
 import ProductFilters from '../components/ProductFilters';
 import { FiChevronLeft, FiChevronRight, FiInbox } from 'react-icons/fi';
 
-const PRODUCTS_PER_PAGE = 8;
+const PRODUCTS_PER_PAGE = 10;
 
 const ProductsPage = () => {
   const [allProducts, setAllProducts] = useState([]);
@@ -57,7 +60,6 @@ const ProductsPage = () => {
     return products;
   }, [searchTerm, categoryFilter, stockFilter, uniqueProducts]);
 
-  // Pagination logic
   const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
   const currentProducts = filteredProducts.slice(
     (currentPage - 1) * PRODUCTS_PER_PAGE,
@@ -82,7 +84,6 @@ const ProductsPage = () => {
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <ProductFilters
-          products={allProducts}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           categoryFilter={categoryFilter}
@@ -92,10 +93,10 @@ const ProductsPage = () => {
         />
 
         {loading ? (
-          <p className="text-center text-gray-500">Loading products...</p>
+          <p className="text-center text-gray-500 py-10">Loading products...</p>
         ) : currentProducts.length > 0 ? (
           <>
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-8">
               {currentProducts.map(p => <ProductCard key={p.$id} product={p} />)}
             </div>
             {totalPages > 1 && (
