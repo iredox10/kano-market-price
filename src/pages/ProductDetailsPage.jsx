@@ -2,13 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { databases } from '../appwrite/config';
-import { DATABASE_ID, PRODUCTS_COLLECTION_ID, SHOP_OWNERS_COLLECTION_ID, PRICE_CONTRIBUTIONS_COLLECTION_ID, PRICE_HISTORY_COLLECTION_ID } from '../appwrite/constants';
+import { DATABASE_ID, PRODUCTS_COLLECTION_ID, SHOP_OWNERS_COLLECTION_ID, PRICE_CONTRIBUTIONS_COLLECTION_ID, PRICE_HISTORY_COLLECTION_ID, PRODUCT_IMAGES_BUCKET_ID } from '../appwrite/constants';
 import { Query } from 'appwrite';
 import PriceDisplay from '../components/PriceDisplay';
 import PriceHistoryChart from '../components/PriceHistoryChart';
 import ImageWithFallback from '../components/ImageWithFallback';
-import SkeletonLoader from '../components/SkeletonLoader'; // Import the new component
-import { PRODUCT_IMAGES_BUCKET_ID } from '../appwrite/constants';
+import SkeletonLoader from '../components/SkeletonLoader';
+import OtherSellersTable from '../components/OtherSellersTable'; // Import the new component
 import { FiChevronLeft } from 'react-icons/fi';
 
 const ProductDetailsPage = () => {
@@ -21,12 +21,11 @@ const ProductDetailsPage = () => {
 
   useEffect(() => {
     const fetchProductDetails = async () => {
-      // Don't reset loading state on re-fetches, just update data
       try {
+        setLoading(true);
         const productDoc = await databases.getDocument(DATABASE_ID, PRODUCTS_COLLECTION_ID, id);
         setProduct(productDoc);
 
-        // Once we have the product, we can fetch everything else in parallel
         const [shopOwnerDoc, contributionsRes, historyRes] = await Promise.all([
           databases.getDocument(DATABASE_ID, SHOP_OWNERS_COLLECTION_ID, productDoc.shopOwnerId),
           databases.listDocuments(DATABASE_ID, PRICE_CONTRIBUTIONS_COLLECTION_ID, [Query.equal('productId', id)]),
@@ -49,7 +48,6 @@ const ProductDetailsPage = () => {
 
       } catch (error) {
         console.error("Failed to fetch product details:", error);
-        // Set product to false to indicate an error, e.g., not found
         setProduct(false);
       } finally {
         setLoading(false);
@@ -122,13 +120,17 @@ const ProductDetailsPage = () => {
             </div>
           </div>
 
-          {/* Right Column: Price Info and Chart */}
+          {/* Right Column: Price Info, Chart, and Other Sellers */}
           <div className="lg:col-span-2">
             <PriceDisplay
               ownerPrice={product.ownerPrice}
               communityPrice={communityPrice}
             />
             <PriceHistoryChart priceHistory={priceHistory} />
+            <OtherSellersTable
+              productName={product.name}
+              currentProductId={product.$id}
+            />
           </div>
         </div>
       </div>
