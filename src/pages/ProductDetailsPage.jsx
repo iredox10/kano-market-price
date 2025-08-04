@@ -1,24 +1,93 @@
 
-// src/pages/ProductDetailsPage.js
-// Displays detailed information about a single product.
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { allProducts } from '../data/mockData';
+import { databases } from '../appwrite/config';
+import { DATABASE_ID, PRODUCTS_COLLECTION_ID, SHOP_OWNERS_COLLECTION_ID, PRICE_CONTRIBUTIONS_COLLECTION_ID, PRICE_HISTORY_COLLECTION_ID } from '../appwrite/constants';
+import { Query } from 'appwrite';
 import PriceDisplay from '../components/PriceDisplay';
 import PriceHistoryChart from '../components/PriceHistoryChart';
+import ImageWithFallback from '../components/ImageWithFallback';
+import SkeletonLoader from '../components/SkeletonLoader'; // Import the new component
+import { PRODUCT_IMAGES_BUCKET_ID } from '../appwrite/constants';
 import { FiChevronLeft } from 'react-icons/fi';
 
 const ProductDetailsPage = () => {
   const { id } = useParams();
-  const product = allProducts.find(p => p.id === parseInt(id));
+  const [product, setProduct] = useState(null);
+  const [shopOwner, setShopOwner] = useState(null);
+  const [communityPrice, setCommunityPrice] = useState(null);
+  const [priceHistory, setPriceHistory] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProductDetails = async () => {
+      // Don't reset loading state on re-fetches, just update data
+      try {
+        const productDoc = await databases.getDocument(DATABASE_ID, PRODUCTS_COLLECTION_ID, id);
+        setProduct(productDoc);
+
+        // Once we have the product, we can fetch everything else in parallel
+        const [shopOwnerDoc, contributionsRes, historyRes] = await Promise.all([
+          databases.getDocument(DATABASE_ID, SHOP_OWNERS_COLLECTION_ID, productDoc.shopOwnerId),
+          databases.listDocuments(DATABASE_ID, PRICE_CONTRIBUTIONS_COLLECTION_ID, [Query.equal('productId', id)]),
+          databases.listDocuments(DATABASE_ID, PRICE_HISTORY_COLLECTION_ID, [Query.equal('productid', id), Query.orderDesc('updatedAt')])
+        ]);
+
+        setShopOwner(shopOwnerDoc);
+
+        if (contributionsRes.documents.length > 0) {
+          const total = contributionsRes.documents.reduce((sum, doc) => sum + doc.price, 0);
+          setCommunityPrice(Math.round(total / contributionsRes.documents.length));
+        }
+
+        const historyData = {
+          daily: historyRes.documents.map(doc => ({ date: new Date(doc.updatedAt).toLocaleDateString(), ownerPrice: doc.price })),
+          weekly: [],
+          monthly: []
+        };
+        setPriceHistory(historyData);
+
+      } catch (error) {
+        console.error("Failed to fetch product details:", error);
+        // Set product to false to indicate an error, e.g., not found
+        setProduct(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProductDetails();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="bg-gray-50 min-h-screen">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <SkeletonLoader className="h-6 w-48 mb-6" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-1">
+              <SkeletonLoader className="h-64 w-full rounded-lg" />
+              <SkeletonLoader className="h-8 w-3/4 mt-4" />
+              <SkeletonLoader className="h-4 w-1/2 mt-2" />
+              <SkeletonLoader className="h-20 w-full mt-4" />
+            </div>
+            <div className="lg:col-span-2 space-y-8">
+              <SkeletonLoader className="h-40 w-full rounded-lg" />
+              <SkeletonLoader className="h-80 w-full rounded-lg" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
-      <div className="text-center py-20">
-        <h2 className="text-2xl font-semibold text-gray-700">Product not found</h2>
-        <Link to="/products" className="mt-4 inline-block bg-green-600 text-white px-6 py-3 rounded-full hover:bg-green-700">
-          Back to Products
+      <div className="text-center p-12">
+        <h2 className="text-2xl font-bold text-gray-700">Product Not Found</h2>
+        <p className="text-gray-500 mt-2">The product you are looking for does not exist or may have been removed.</p>
+        <Link to="/products" className="mt-6 inline-block bg-green-600 text-white px-6 py-3 rounded-full hover:bg-green-700 font-semibold">
+          Back to All Products
         </Link>
       </div>
     );
@@ -37,9 +106,18 @@ const ProductDetailsPage = () => {
           {/* Left Column: Image and Description */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-md p-4">
-              <img src={product.image} alt={product.name} className="w-full h-64 object-cover rounded-lg" />
+              <ImageWithFallback
+                fileId={product.imageFileId}
+                bucketId={PRODUCT_IMAGES_BUCKET_ID}
+                fallbackText={product.name}
+                className="w-full h-64 object-cover rounded-lg"
+              />
               <h1 className="text-3xl font-bold text-gray-800 mt-4">{product.name}</h1>
-              <p className="text-md text-gray-500">Sold by <Link to={`/shop/${product.id}`} className="text-blue-500 hover:underline">{product.shop}</Link></p>
+              {shopOwner && (
+                <p className="text-md text-gray-500">
+                  Sold by <Link to={`/shop/${shopOwner.$id}`} className="text-blue-500 hover:underline">{shopOwner.name}</Link>
+                </p>
+              )}
               <p className="mt-4 text-gray-700">{product.description}</p>
             </div>
           </div>
@@ -47,10 +125,10 @@ const ProductDetailsPage = () => {
           {/* Right Column: Price Info and Chart */}
           <div className="lg:col-span-2">
             <PriceDisplay
-              ownerPrice={product.currentPrice.owner}
-              communityPrice={product.currentPrice.community}
+              ownerPrice={product.ownerPrice}
+              communityPrice={communityPrice}
             />
-            <PriceHistoryChart priceHistory={product.priceHistory} />
+            <PriceHistoryChart priceHistory={priceHistory} />
           </div>
         </div>
       </div>

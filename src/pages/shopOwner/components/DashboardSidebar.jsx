@@ -1,12 +1,12 @@
 
 // src/pages/shopOwner/components/DashboardSidebar.js
-// Sidebar navigation for the Shop Owner Dashboard with a link back to the user account.
+// Sidebar navigation for the Shop Owner Dashboard (Desktop View).
 
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { account } from '../../../appwrite/config';
 import { useAuth } from '../../../context/AuthContext';
-import { FiGrid, FiPackage, FiPlusSquare, FiSettings, FiLogOut, FiUser } from 'react-icons/fi';
+import { FiGrid, FiPackage, FiPlusSquare, FiSettings, FiLogOut, FiUser, FiBarChart2 } from 'react-icons/fi';
 
 const DashboardSidebar = () => {
   const navigate = useNavigate();
@@ -18,7 +18,6 @@ const DashboardSidebar = () => {
     try {
       await account.deleteSession('current');
       setCurrentUser(null);
-      console.log('Shop owner logged out successfully');
       navigate('/login');
     } catch (error) {
       console.error("Failed to log out:", error);
@@ -26,36 +25,33 @@ const DashboardSidebar = () => {
   };
 
   return (
-    <div className="bg-white w-64 h-screen shadow-lg p-4 flex flex-col">
+    <div className="bg-white w-64 h-screen shadow-lg p-4 flex-col hidden lg:flex">
       <div className="text-2xl font-bold text-green-600 p-4 border-b">
         Owner Dashboard
       </div>
       <nav className="mt-6 flex-grow">
         <NavLink to="/dashboard/overview" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}>
-          <FiGrid className="mr-3" />
-          Overview
+          <FiGrid className="mr-3" /> Overview
         </NavLink>
         <NavLink to="/dashboard/products" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}>
-          <FiPackage className="mr-3" />
-          My Products
+          <FiPackage className="mr-3" /> My Products
         </NavLink>
         <NavLink to="/dashboard/add-product" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}>
-          <FiPlusSquare className="mr-3" />
-          Add New Product
+          <FiPlusSquare className="mr-3" /> Add New Product
+        </NavLink>
+        <NavLink to="/dashboard/analytics" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}>
+          <FiBarChart2 className="mr-3" /> Analytics
         </NavLink>
         <NavLink to="/dashboard/settings" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}>
-          <FiSettings className="mr-3" />
-          Shop Settings
+          <FiSettings className="mr-3" /> Shop Settings
         </NavLink>
       </nav>
       <div className="mt-auto pt-4 border-t">
         <NavLink to="/my-account" className={linkClasses}>
-          <FiUser className="mr-3" />
-          Switch to My Account
+          <FiUser className="mr-3" /> Switch to My Account
         </NavLink>
         <button onClick={handleLogout} className={`${linkClasses} w-full mt-2`}>
-          <FiLogOut className="mr-3" />
-          Logout
+          <FiLogOut className="mr-3" /> Logout
         </button>
       </div>
     </div>

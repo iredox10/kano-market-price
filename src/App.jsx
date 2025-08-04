@@ -1,4 +1,7 @@
 
+// src/App.js
+// The main application component that sets up routing for all pages and dashboards.
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
@@ -25,7 +28,7 @@ import ShopApplicationPage from './pages/ShopApplicationPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage'; // Import the new page
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 
 // Dashboard Page Components
 import DashboardOverviewPage from './pages/shopOwner/DashboardOverviewPage';
@@ -42,6 +45,8 @@ import ManageCategoriesPage from './pages/admin/ManageCategoriesPage';
 import CategoryProductsPage from './pages/admin/CategoryProductsPage';
 import ManageUsersPage from './pages/admin/ManageUsersPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
+import ManageAnnouncementsPage from './pages/admin/ManageAnnouncementsPage';
+import DashboardAnalyticsPage from './pages/shopOwner/DashboardAnalyticsPage';
 
 
 export default function App() {
@@ -63,7 +68,7 @@ export default function App() {
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/about" element={<AboutPage />} />
-            <Route path="/privacy" element={<PrivacyPolicyPage />} /> {/* Updated Route */}
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
             <Route path="/contact" element={<ContactPage />} />
 
             {/* Protected User Routes */}
@@ -80,6 +85,7 @@ export default function App() {
               <Route index element={<Navigate to="overview" replace />} />
               <Route path="overview" element={<DashboardOverviewPage />} />
               <Route path="products" element={<DashboardProductsPage />} />
+              <Route path="analytics" element={<DashboardAnalyticsPage />} />
               <Route path="settings" element={<DashboardSettingsPage />} />
               <Route path="add-product" element={<AddEditProductPage />} />
               <Route path="edit-product/:id" element={<AddEditProductPage />} />
@@ -98,6 +104,7 @@ export default function App() {
               <Route path="manage-categories/:categoryName" element={<CategoryProductsPage />} />
               <Route path="manage-users" element={<ManageUsersPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
+              <Route path="manage-announcements" element={<ManageAnnouncementsPage />} />
             </Route>
           </Route>
         </Routes>

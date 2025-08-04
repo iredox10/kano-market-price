@@ -1,11 +1,8 @@
 
-// src/components/admin/AdminSidebar.js
-// Sidebar navigation for the Admin Dashboard with functional logout.
-
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { account } from '../../appwrite/config'; // Import Appwrite account service
-import { FiGrid, FiBriefcase, FiUserCheck, FiSettings, FiLogOut, FiClock, FiMap, FiTag } from 'react-icons/fi';
+import { account } from '../../appwrite/config';
+import { FiGrid, FiBriefcase, FiUserCheck, FiSettings, FiLogOut, FiClock, FiMap, FiTag, FiVolume2 } from 'react-icons/fi'; // CORRECTED: Replaced FiMegaphone
 
 const AdminSidebar = () => {
   const navigate = useNavigate();
@@ -15,8 +12,7 @@ const AdminSidebar = () => {
   const handleLogout = async () => {
     try {
       await account.deleteSession('current');
-      console.log('Admin logged out successfully');
-      navigate('/login'); // Redirect to login page after logout
+      navigate('/login');
     } catch (error) {
       console.error("Failed to log out:", error);
     }
@@ -29,34 +25,30 @@ const AdminSidebar = () => {
       </div>
       <nav className="mt-6 flex-grow">
         <NavLink to="/admin/dashboard" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}>
-          <FiGrid className="mr-3" />
-          Dashboard
+          <FiGrid className="mr-3" /> Dashboard
         </NavLink>
         <NavLink to="/admin/verification-queue" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}>
-          <FiClock className="mr-3" />
-          Verification Queue
+          <FiClock className="mr-3" /> Verification Queue
+        </NavLink>
+        <NavLink to="/admin/manage-announcements" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}>
+          <FiVolume2 className="mr-3" /> Announcements
         </NavLink>
         <div className="mt-4 mb-2 px-4 text-xs font-semibold uppercase text-gray-500">Content</div>
         <NavLink to="/admin/manage-shops" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}>
-          <FiBriefcase className="mr-3" />
-          Manage Shops
+          <FiBriefcase className="mr-3" /> Manage Shops
         </NavLink>
         <NavLink to="/admin/manage-markets" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}>
-          <FiMap className="mr-3" />
-          Manage Markets
+          <FiMap className="mr-3" /> Manage Markets
         </NavLink>
         <NavLink to="/admin/manage-categories" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}>
-          <FiTag className="mr-3" />
-          Manage Categories
+          <FiTag className="mr-3" /> Manage Categories
         </NavLink>
         <div className="mt-4 mb-2 px-4 text-xs font-semibold uppercase text-gray-500">Users</div>
         <NavLink to="/admin/manage-users" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}>
-          <FiUserCheck className="mr-3" />
-          Manage Users
+          <FiUserCheck className="mr-3" /> Manage Users
         </NavLink>
         <NavLink to="/admin/settings" className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}>
-          <FiSettings className="mr-3" />
-          Settings
+          <FiSettings className="mr-3" /> Settings
         </NavLink>
       </nav>
       <div className="mt-auto">

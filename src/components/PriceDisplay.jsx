@@ -1,7 +1,4 @@
 
-// src/components/PriceDisplay.js
-// Displays and differentiates between owner and community prices.
-
 import React from 'react';
 import { FiCheckCircle, FiUsers } from 'react-icons/fi';
 
